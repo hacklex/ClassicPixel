@@ -1,60 +1,47 @@
-using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Input;
-using Avalonia.Interactivity;
 using Avalonia.Media;
-using System;
 using System.Collections.ObjectModel;
-using PixelEditorApp.ViewModels;
+using System.Windows.Input;
 
-namespace PixelEditorApp
+namespace PixelEditorApp.ViewModels
 {
-    public class PaletteColor
+    public class ColorPaletteViewModel : ViewModelBase
     {
-        public Color Color { get; set; }
-        public IBrush ColorBrush => new SolidColorBrush(Color);
+        private Color _selectedColor;
 
-        public PaletteColor(Color color)
-        {
-            Color = color;
-        }
-    }
-    
-    public delegate void ColorChangedEventHandler(Color selectedColor, bool isLeftButton);
-
-    public partial class ColorPaletteControl : UserControl
-    {
         public ObservableCollection<PaletteColor> Colors { get; } = new ObservableCollection<PaletteColor>();
 
-        private void OnColorPressed(object sender, PointerPressedEventArgs e)
+        public Color SelectedColor
         {
-            if (sender is Border border && border.DataContext is PaletteColor paletteColor && 
-                DataContext is ColorPaletteViewModel viewModel)
-            {
-                var isLeftButton = e.GetCurrentPoint(border).Properties.IsLeftButtonPressed;
-                viewModel.SelectColorCommand.Execute(new ColorSelectionData(paletteColor.Color, isLeftButton));
-            }
+            get => _selectedColor;
+            set => SetProperty(ref _selectedColor, value);
         }
+        
+        public ICommand RemoveColorCommand { get; }
+        public ICommand SelectColorCommand { get; }
+        public ICommand LoadDefault16BitColorsCommand { get; }
 
         public event ColorChangedEventHandler? ColorSelected;
 
-        public ColorPaletteControl()
+        public ColorPaletteViewModel()
         {
-            InitializeComponent(); 
+            RemoveColorCommand = new RelayCommand(RemoveColor);
+            SelectColorCommand = new RelayCommand(SelectColor);
+            LoadDefault16BitColorsCommand = new RelayCommand(_ => LoadDefault16BitColors());
+            LoadDefault16BitColors();
         }
 
-        private void ColorList_PointerPressed(object? sender, PointerPressedEventArgs e)
+        private void SelectColor(object? parameter)
         {
-            if (e.Source is Border border && border.DataContext is PaletteColor paletteColor)
+            if (parameter is ColorSelectionData data)
             {
-                var isLeftButton = e.GetCurrentPoint(border).Properties.IsLeftButtonPressed;
-                ColorSelected?.Invoke(paletteColor.Color, isLeftButton);
+                SelectedColor = data.Color;
+                ColorSelected?.Invoke(data.Color, data.IsLeftButton);
             }
         }
 
-        private void OnRemoveColorClick(object? sender, RoutedEventArgs e)
+        private void RemoveColor(object? parameter)
         {
-            if (sender is MenuItem menuItem && menuItem.CommandParameter is PaletteColor paletteColor)
+            if (parameter is PaletteColor paletteColor)
             {
                 Colors.Remove(paletteColor);
             }
@@ -104,7 +91,18 @@ namespace PixelEditorApp
             AddColor(Color.FromRgb(255, 128, 0));     // Orange
             AddColor(Color.FromRgb(255, 192, 203));   // Pink
             AddColor(Color.FromRgb(173, 216, 230));   // Light Blue
-            
+        }
+    }
+
+    public class ColorSelectionData
+    {
+        public Color Color { get; set; }
+        public bool IsLeftButton { get; set; }
+
+        public ColorSelectionData(Color color, bool isLeftButton)
+        {
+            Color = color;
+            IsLeftButton = isLeftButton;
         }
     }
 }

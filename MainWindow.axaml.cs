@@ -1,217 +1,240 @@
-using Avalonia;
+using System;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Media;
-using Avalonia.Media.Imaging;
-using Avalonia.Platform.Storage;
-using System;
-using System.IO;
+using PixelEditorApp.ViewModels;
 using System.Threading.Tasks;
+using Avalonia;
+using Avalonia.Platform.Storage;
 
 namespace PixelEditorApp
 {
     public partial class MainWindow : Window
     {
-        private PixelEditor _pixelEditor;
-        private Point _lastPosition;
-        private bool _isDrawing;
-        private Point _selectionStart;
-        private bool _isSelecting;
-        private readonly int _defaultWidth = 32;
-        private readonly int _defaultHeight = 32;
-        private readonly int _pixelSize = 16;
+        private Point? _lastPoint;
+        private Point? _selectionStartPoint;
+
+        private MainViewModel? _currentSubscriptionViewModel;
 
         public MainWindow()
         {
             InitializeComponent();
-            
-            _pixelEditor = new PixelEditor(_defaultWidth, _defaultHeight);
-            UpdateCanvasSize();
-            
-            EditorCanvas.PointerMoved += OnCanvasPointerMoved;
-            EditorCanvas.PointerPressed += OnCanvasPointerPressed;
-            EditorCanvas.PointerReleased += OnCanvasPointerReleased;
-            
-            RefreshCanvas();
+
+            // Subscribe to ViewModel events
+            DataContextChanged += OnDataContextChanged;
+            OnDataContextChanged(this, null);
         }
 
-        private void UpdateCanvasSize()
+        private void OnDataContextChanged(object? sender, EventArgs? args)
         {
-            EditorCanvas.Width = _pixelEditor.Width * _pixelSize;
-            EditorCanvas.Height = _pixelEditor.Height * _pixelSize;
-            CanvasSizeText.Text = $"Size: {_pixelEditor.Width}x{_pixelEditor.Height}";
+            UnsubscribeFromViewModel(_currentSubscriptionViewModel);
+            _currentSubscriptionViewModel = DataContext as MainViewModel;
+            SubscribeToViewModel(_currentSubscriptionViewModel);
         }
 
-        private void RefreshCanvas()
+        private void SubscribeToViewModel(MainViewModel? viewModel)
         {
-            EditorCanvas.Source = _pixelEditor.GetBitmap();
+            if (viewModel == null) return;
+            viewModel.ExitRequested += OnViewModelOnExitRequested;
+            viewModel.NewCanvasRequested += OnViewModelOnNewCanvasRequested;
+            viewModel.OpenRequested += OnViewModelOnOpenRequested;
+            viewModel.SaveRequested += OnViewModelOnSaveRequested;
         }
 
-        private void OnCanvasPointerMoved(object? sender, PointerEventArgs e)
+        private async void OnViewModelOnSaveRequested(object? o, FileOperationEventArgs fileOperationEventArgs)
         {
-            var position = e.GetPosition(EditorCanvas);
-            int x = (int)(position.X / _pixelSize);
-            int y = (int)(position.Y / _pixelSize);
-            
-            if (x < 0 || y < 0 || x >= _pixelEditor.Width || y >= _pixelEditor.Height)
-                return;
-
-            PositionText.Text = $"Position: {x}, {y}";
-            
-            if (_isDrawing && PencilTool.IsChecked == true)
+            try
             {
-                _pixelEditor.DrawPixel(x, y, LastDrawingColor);
-                RefreshCanvas();
+                await SaveFile();
             }
-            else if (_isSelecting && SelectionTool.IsChecked == true)
+            catch
             {
-                // Update selection preview
-                _pixelEditor.UpdateSelectionPreview((int)_selectionStart.X, (int)_selectionStart.Y, x, y);
-                RefreshCanvas();
+                // Handle errors silently or add error logging
             }
         }
 
-        private bool _lastButtonIsLeft;
-        private Color LastDrawingColor => _lastButtonIsLeft ? _selectedPrimaryColor : _selectedSecondaryColor;
-        
-        private void OnCanvasPointerPressed(object? sender, PointerPressedEventArgs e)
+        private async void OnViewModelOnOpenRequested(object? o, FileOperationEventArgs fileOperationEventArgs)
         {
-            var position = e.GetPosition(EditorCanvas);
-            int x = (int)(position.X / _pixelSize);
-            int y = (int)(position.Y / _pixelSize);
-            
-            if (x < 0 || y < 0 || x >= _pixelEditor.Width || y >= _pixelEditor.Height)
-                return;
-
-            _lastPosition = new Point(x, y);
-            _lastButtonIsLeft = e.GetCurrentPoint(EditorCanvas).Properties.IsLeftButtonPressed;
-
-            if (PencilTool.IsChecked == true)
+            try
             {
-                _isDrawing = true;
-                _pixelEditor.DrawPixel(x, y, LastDrawingColor);
-                RefreshCanvas();
+                await OpenFile();
             }
-            else if (SelectionTool.IsChecked == true)
+            catch
             {
-                _isSelecting = true;
-                _selectionStart = new Point(x, y);
-                _pixelEditor.StartSelection();
-            }
-            else if (FillTool.IsChecked == true)
-            {
-                _pixelEditor.FloodFill(x, y, LastDrawingColor);
-                RefreshCanvas();
+                // Handle errors silently or add error logging
             }
         }
 
-        private void OnCanvasPointerReleased(object? sender, PointerReleasedEventArgs e)
+        private async void OnViewModelOnNewCanvasRequested(object? o,
+            NewCanvasRequestEventArgs newCanvasRequestEventArgs)
         {
-            if (_isDrawing)
+            try
             {
-                _isDrawing = false;
+                await ShowNewCanvasDialog();
             }
-            else if (_isSelecting)
+            catch
             {
-                _isSelecting = false;
-                var position = e.GetPosition(EditorCanvas);
-                int x = (int)(position.X / _pixelSize);
-                int y = (int)(position.Y / _pixelSize);
-                
-                if (x < 0) x = 0;
-                if (y < 0) y = 0;
-                if (x >= _pixelEditor.Width) x = _pixelEditor.Width - 1;
-                if (y >= _pixelEditor.Height) y = _pixelEditor.Height - 1;
-
-                _pixelEditor.FinishSelection((int)_selectionStart.X, (int)_selectionStart.Y, x, y);
-                RefreshCanvas();
+                // Handle errors silently or add error logging
             }
         }
 
-        private async void OnNewClick(object sender, RoutedEventArgs e)
+        private void OnViewModelOnExitRequested(object? o, EventArgs eventArgs) => Close();
+
+        private void UnsubscribeFromViewModel(MainViewModel? viewModel)
         {
-            var dialog = new NewCanvasDialog();
-            if (await dialog.ShowDialog<bool>(this))
-            {
-                _pixelEditor = new PixelEditor(dialog.CanvasWidth, dialog.CanvasHeight);
-                UpdateCanvasSize();
-                RefreshCanvas();
-            }
+            if (viewModel == null) return;
+            viewModel.ExitRequested -= OnViewModelOnExitRequested;
+            viewModel.NewCanvasRequested -= OnViewModelOnNewCanvasRequested;
+            viewModel.OpenRequested -= OnViewModelOnOpenRequested;
+            viewModel.SaveRequested -= OnViewModelOnSaveRequested;
         }
 
-        private async void OnOpenClick(object sender, RoutedEventArgs e)
+        private async Task ShowNewCanvasDialog()
         {
-            var options = new FilePickerOpenOptions
+            var dialog = new NewCanvasDialog
             {
-                Title = "Open PNG File",
+                DataContext = new NewCanvasDialogViewModel()
+            };
+
+            var viewModel = (NewCanvasDialogViewModel)dialog.DataContext;
+            viewModel.DialogClosed += (sender, result) =>
+            {
+                if (result.Result)
+                {
+                    if (DataContext is MainViewModel mainViewModel)
+                    {
+                        mainViewModel.CreateNewCanvas(result.Width, result.Height);
+                    }
+                }
+
+                dialog.Close();
+            };
+
+            await dialog.ShowDialog(this);
+        }
+
+        private async Task OpenFile()
+        {
+            var topLevel = TopLevel.GetTopLevel(this);
+            var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                Title = "Open Image",
                 AllowMultiple = false,
-                FileTypeFilter = new[] { FilePickerFileTypes.ImagePng }
-            };
-
-            var result = await StorageProvider.OpenFilePickerAsync(options);
-            if (result.Count > 0)
-            {
-                try
+                FileTypeFilter = new FilePickerFileType[]
                 {
-                    using var stream = await result[0].OpenReadAsync();
-                    _pixelEditor.LoadFromStream(stream);
-                    UpdateCanvasSize();
-                    RefreshCanvas();
-                    StatusText.Text = "Image loaded";
+                    new("Image Files") { Patterns = new[] { "*.png", "*.jpg", "*.jpeg", "*.bmp" } },
+                    new("All Files") { Patterns = new[] { "*.*" } }
                 }
-                catch (Exception ex)
+            });
+
+            if (files.Count > 0)
+            {
+                if (DataContext is MainViewModel viewModel)
                 {
-                    StatusText.Text = $"Error: {ex.Message}";
+                    using var stream = await files[0].OpenReadAsync();
+                    viewModel.LoadFromStream(stream);
                 }
             }
         }
 
-        private async void OnSaveClick(object sender, RoutedEventArgs e)
+        private async Task SaveFile()
         {
-            var options = new FilePickerSaveOptions
+            var topLevel = TopLevel.GetTopLevel(this);
+            var file = await topLevel.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
             {
-                Title = "Save PNG File",
+                Title = "Save Image",
                 DefaultExtension = "png",
-                FileTypeChoices = new[] { FilePickerFileTypes.ImagePng }
-            };
-
-            var result = await StorageProvider.SaveFilePickerAsync(options);
-            if (result != null)
-            {
-                try
+                FileTypeChoices = new FilePickerFileType[]
                 {
-                    using var stream = await result.OpenWriteAsync();
-                    _pixelEditor.SaveToStream(stream);
-                    StatusText.Text = "Image saved";
+                    new("PNG Files") { Patterns = new[] { "*.png" } },
+                    new("All Files") { Patterns = new[] { "*.*" } }
                 }
-                catch (Exception ex)
+            });
+
+            if (file != null)
+            {
+                if (DataContext is MainViewModel viewModel)
                 {
-                    StatusText.Text = $"Error: {ex.Message}";
+                    using var stream = await file.OpenWriteAsync();
+                    viewModel.SaveToStream(stream);
                 }
             }
         }
 
-        private void OnExitClick(object sender, RoutedEventArgs e)
+        private void CanvasPointerMoved(object sender, PointerEventArgs e)
         {
-            Environment.Exit(0);
-        }
-        
-        private Color _selectedPrimaryColor = Colors.Black;
-        private Color _selectedSecondaryColor = Colors.White;
+            var position = e.GetPosition(sender as Canvas);
+            var x = (int)position.X;
+            var y = (int)position.Y;
 
-        private void ColorPalette_OnColorSelected(Color selectedColor, bool isLeftClicked)
+            if (DataContext is MainViewModel viewModel)
+            {
+                viewModel.UpdatePositionCommand.Execute(new PixelEventArgs(x, y, false));
+
+                if (e.GetCurrentPoint(sender as Visual).Properties.IsLeftButtonPressed ||
+                    e.GetCurrentPoint(sender as Visual).Properties.IsRightButtonPressed)
+                {
+                    var isLeftButton = e.GetCurrentPoint(sender as Visual).Properties.IsLeftButtonPressed;
+
+                    if (viewModel.IsPencilToolSelected && _lastPoint.HasValue)
+                    {
+                        viewModel.DrawPixelCommand.Execute(new PixelEventArgs(x, y, isLeftButton));
+                    }
+                    else if (viewModel.IsSelectionToolSelected && _selectionStartPoint.HasValue)
+                    {
+                        viewModel.SelectionUpdateCommand.Execute(new SelectionEventArgs(
+                            (int)_selectionStartPoint.Value.X,
+                            (int)_selectionStartPoint.Value.Y,
+                            x, y));
+                    }
+                }
+
+                _lastPoint = position;
+            }
+        }
+
+        private void CanvasPointerPressed(object sender, PointerPressedEventArgs e)
         {
-            if (isLeftClicked)
+            var position = e.GetPosition(sender as Canvas);
+            var x = (int)position.X;
+            var y = (int)position.Y;
+
+            if (DataContext is MainViewModel viewModel)
             {
-                _selectedPrimaryColor = selectedColor;
-                PrimaryColorBorder.Background = new SolidColorBrush(selectedColor);
+                bool isLeftButton = e.GetCurrentPoint(sender as Visual).Properties.IsLeftButtonPressed;
+
+                if (viewModel.IsPencilToolSelected)
+                {
+                    viewModel.DrawPixelCommand.Execute(new PixelEventArgs(x, y, isLeftButton));
+                }
+                else if (viewModel.IsSelectionToolSelected)
+                {
+                    _selectionStartPoint = position;
+                    viewModel.SelectionStartCommand.Execute(new PixelEventArgs(x, y, isLeftButton));
+                }
+                else if (viewModel.IsFillToolSelected)
+                {
+                    viewModel.DrawPixelCommand.Execute(new PixelEventArgs(x, y, isLeftButton));
+                }
             }
-            else
+        }
+
+        private void CanvasPointerReleased(object sender, PointerReleasedEventArgs e)
+        {
+            var position = e.GetPosition(sender as Canvas);
+            var x = (int)position.X;
+            var y = (int)position.Y;
+
+            if (DataContext is MainViewModel viewModel && _selectionStartPoint.HasValue && viewModel.IsSelectionToolSelected)
             {
-                _selectedSecondaryColor = selectedColor;
-                SecondaryColorBorder.Background = new SolidColorBrush(selectedColor);
+                viewModel.SelectionEndCommand.Execute(new SelectionEventArgs(
+                    (int)_selectionStartPoint.Value.X,
+                    (int)_selectionStartPoint.Value.Y,
+                    x, y));
+                _selectionStartPoint = null;
             }
+
+            _lastPoint = null;
         }
     }
 }

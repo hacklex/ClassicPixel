@@ -3,12 +3,19 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PixelEditorApp"
+        xmlns:vm="clr-namespace:PixelEditorApp.ViewModels"
         xmlns:commonControls="clr-namespace:Classic.CommonControls;assembly=Classic.CommonControls.Avalonia"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
         x:Class="PixelEditorApp.MainWindow"
         FontFamily="Verdana"
+        x:DataType="{x:Type vm:MainViewModel}"
         RenderOptions.TextRenderingMode="Antialias"
         Title="Pixel Art Editor">
+    
+    <Window.DataContext>
+        <vm:MainViewModel/>
+    </Window.DataContext>
+    
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -21,29 +28,27 @@
         <!-- Menu -->
         <Menu Grid.Row="0">
             <MenuItem Header="File">
-                <MenuItem Header="New" Click="OnNewClick"/>
-                <MenuItem Header="Open" Click="OnOpenClick"/>
-                <MenuItem Header="Save" Click="OnSaveClick"/>
+                <MenuItem Header="New" Command="{Binding NewCommand}"/>
+                <MenuItem Header="Open" Command="{Binding OpenCommand}"/>
+                <MenuItem Header="Save" Command="{Binding SaveCommand}"/>
                 <Separator/>
-                <MenuItem Header="Exit" Click="OnExitClick"/>
+                <MenuItem Header="Exit" Command="{Binding ExitCommand}"/>
             </MenuItem>
             <MenuItem Header="Palette">
-                <MenuItem Header="Reset to Default" />
-                <MenuItem Header="Add Current Color" />
+                <MenuItem Header="Reset to Default" Command="{Binding ColorPaletteViewModel.LoadDefault16BitColorsCommand}" />
+                <MenuItem Header="Add Current Color" Command="{Binding AddCurrentColorCommand}" />
             </MenuItem>
+
         </Menu>
         
-        <WrapPanel Grid.Row="1"  >
-             
-            <StackPanel Orientation="Horizontal" Margin="5">
-                                     <RadioButton Name="PencilTool" GroupName="Tools" Content="Pencil" IsChecked="True" Margin="5"/>
-                                     <RadioButton Name="SelectionTool" GroupName="Tools" Content="Selection" Margin="5"/>
-                                     <RadioButton Name="FillTool" GroupName="Tools" Content="Fill" Margin="5"/>
-                                      
-                                 </StackPanel>
-        </WrapPanel>
         <!-- Tools -->
-        
+        <WrapPanel Grid.Row="1">
+            <StackPanel Orientation="Horizontal" Margin="5">
+                <RadioButton Content="Pencil" IsChecked="{Binding IsPencilToolSelected}" Margin="5"/>
+                <RadioButton Content="Selection" IsChecked="{Binding IsSelectionToolSelected}" Margin="5"/>
+                <RadioButton Content="Fill" IsChecked="{Binding IsFillToolSelected}" Margin="5"/>
+            </StackPanel>
+        </WrapPanel>
 
         <!-- Color Palette -->
         <StackPanel Grid.Row="2" Margin="5">
@@ -51,28 +56,35 @@
             <StackPanel Orientation="Horizontal">
                 <ClassicBorderDecorator BorderStyle="Sunken" BorderThickness="1" Margin="0 0 5 0">
                     <Grid Width="63" Background="{StaticResource BgBrush}">
-                        <Border x:Name="SecondaryColorBorder" Margin="10" HorizontalAlignment="Right" VerticalAlignment="Bottom" Background="White" BorderBrush="Black" Width="24" Height="24" BorderThickness="1"></Border>
-                        <Border x:Name="PrimaryColorBorder" Margin="10" HorizontalAlignment="Left" VerticalAlignment="Top" Background="Black" BorderBrush="Black" Width="24" Height="24" BorderThickness="1"></Border>
+                        <Border Margin="10" HorizontalAlignment="Right" VerticalAlignment="Bottom" 
+                                Background="{Binding SecondaryColor, Converter={StaticResource ColorToBrushConverter}}" 
+                                BorderBrush="Black" Width="24" Height="24" BorderThickness="1" />
+                        <Border Margin="10" HorizontalAlignment="Left" VerticalAlignment="Top" 
+                                Background="{Binding PrimaryColor, Converter={StaticResource ColorToBrushConverter}}" 
+                                BorderBrush="Black" Width="24" Height="24" BorderThickness="1" />
                     </Grid>
                 </ClassicBorderDecorator>
-                <local:ColorPaletteControl ColorSelected="ColorPalette_OnColorSelected" Name="ColorPalette" Height="63"/>
+                <local:ColorPaletteControl DataContext="{Binding ColorPaletteViewModel}" Height="63"/>
             </StackPanel>
         </StackPanel>
         
         <!-- Canvas -->
         <ClassicBorderDecorator Grid.Row="3" BorderStyle="Sunken" BorderThickness="2" Margin="5" Background="Gray">
             <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-                <Canvas RenderOptions.EdgeMode="Aliased" RenderOptions.BitmapInterpolationMode="None" Name="CanvasContainer">
-                    <Image Name="EditorCanvas"/>
+                <Canvas RenderOptions.EdgeMode="Aliased" RenderOptions.BitmapInterpolationMode="None"
+                        PointerMoved="CanvasPointerMoved"
+                        PointerPressed="CanvasPointerPressed"
+                        PointerReleased="CanvasPointerReleased">
+                    <Image Source="{Binding CanvasBitmap}"/>
                 </Canvas>
             </ScrollViewer>
         </ClassicBorderDecorator>
         
         <!-- Status Bar -->
         <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="5">
-            <TextBlock Name="StatusText" Text="Ready" Margin="5"/>
-            <TextBlock Name="PositionText" Text="Position: 0, 0" Margin="5"/>
-            <TextBlock Name="CanvasSizeText" Text="Size: 32x32" Margin="5"/>
+            <TextBlock Text="{Binding StatusText}" Margin="5"/>
+            <TextBlock Text="{Binding PositionText}" Margin="5"/>
+            <TextBlock Text="{Binding CanvasSizeText}" Margin="5"/>
         </StackPanel>
     </Grid>
 </Window>

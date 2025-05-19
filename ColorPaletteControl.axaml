@@ -3,11 +3,13 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:pixelEditorApp="clr-namespace:PixelEditorApp"
+             x:DataType="{x:Type vm:ColorPaletteViewModel}"
+             xmlns:vm="clr-namespace:PixelEditorApp.ViewModels" 
              mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="100"
-            
              x:Class="PixelEditorApp.ColorPaletteControl">
+    
     <ClassicBorderDecorator BorderStyle="Sunken" BorderThickness="2" Padding="2">
-        <ItemsControl Name="ColorList">
+        <ItemsControl ItemsSource="{Binding Colors}">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
                     <WrapPanel Orientation="Vertical" />
@@ -18,12 +20,9 @@
                     <Border Margin="2" Background="{StaticResource BgBrush}">
                         <Border Width="24" Height="24"  
                                 BorderBrush="Black" BorderThickness="1"
-                                Background="{Binding ColorBrush}">
-                            <Border.ContextMenu>
-                                <ContextMenu>
-                                    <MenuItem Header="Remove" Click="OnRemoveColorClick" CommandParameter="{Binding}"/>
-                                </ContextMenu>
-                            </Border.ContextMenu>
+                                Background="{Binding ColorBrush}"
+                                PointerPressed="OnColorPressed">
+                            
                         </Border>
                     </Border>
                 </DataTemplate>

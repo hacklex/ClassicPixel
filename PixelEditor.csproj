@@ -25,9 +25,5 @@
         </PackageReference>
         <PackageReference Include="Classic.Avalonia.Theme" Version="11.2.0.7" />
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1"/>
-    </ItemGroup>
-
-    <ItemGroup>
-      <UpToDateCheckInput Remove="Views\MainWindow.axaml" />
-    </ItemGroup>
+    </ItemGroup> 
 </Project>
