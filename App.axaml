@@ -1,0 +1,10 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="PixelEditorApp.App">
+    <Application.Styles>
+        <FluentTheme />
+    </Application.Styles>
+    <Application.Resources>
+        <ImageBrush TileMode="Tile" Stretch="None" SourceRect="0 0 6 6" DestinationRect="0 0 3 3" AlignmentX="Left" AlignmentY="Top" x:Key="BgBrush" Source="/Assets/BgPattern.png"></ImageBrush>
+    </Application.Resources>
+</Application>
