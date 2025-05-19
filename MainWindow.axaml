@@ -3,8 +3,11 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PixelEditorApp"
+        xmlns:commonControls="clr-namespace:Classic.CommonControls;assembly=Classic.CommonControls.Avalonia"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
         x:Class="PixelEditorApp.MainWindow"
+        FontFamily="Verdana"
+        RenderOptions.TextRenderingMode="Antialias"
         Title="Pixel Art Editor">
     <Grid>
         <Grid.RowDefinitions>
@@ -30,29 +33,40 @@
             </MenuItem>
         </Menu>
         
+        <WrapPanel Grid.Row="1"  >
+             
+            <StackPanel Orientation="Horizontal" Margin="5">
+                                     <RadioButton Name="PencilTool" GroupName="Tools" Content="Pencil" IsChecked="True" Margin="5"/>
+                                     <RadioButton Name="SelectionTool" GroupName="Tools" Content="Selection" Margin="5"/>
+                                     <RadioButton Name="FillTool" GroupName="Tools" Content="Fill" Margin="5"/>
+                                      
+                                 </StackPanel>
+        </WrapPanel>
         <!-- Tools -->
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="5">
-            <RadioButton Name="PencilTool" GroupName="Tools" Content="Pencil" IsChecked="True" Margin="5"/>
-            <RadioButton Name="SelectionTool" GroupName="Tools" Content="Selection" Margin="5"/>
-            <RadioButton Name="FillTool" GroupName="Tools" Content="Fill" Margin="5"/>
-            <Separator Width="20" />
-            <ColorPicker Name="ColorPicker" Width="150" Margin="5"/>
-        </StackPanel>
+        
 
         <!-- Color Palette -->
         <StackPanel Grid.Row="2" Margin="5">
             <TextBlock Text="Color Palette:" Margin="0,0,0,5"/>
-            <local:ColorPaletteControl ColorSelected="ColorPalette_OnColorSelected" Name="ColorPalette" Height="80"/>
+            <StackPanel Orientation="Horizontal">
+                <ClassicBorderDecorator BorderStyle="Sunken" BorderThickness="1" Margin="0 0 5 0">
+                    <Grid Width="63" Background="{StaticResource BgBrush}">
+                        <Border x:Name="SecondaryColorBorder" Margin="10" HorizontalAlignment="Right" VerticalAlignment="Bottom" Background="White" BorderBrush="Black" Width="24" Height="24" BorderThickness="1"></Border>
+                        <Border x:Name="PrimaryColorBorder" Margin="10" HorizontalAlignment="Left" VerticalAlignment="Top" Background="Black" BorderBrush="Black" Width="24" Height="24" BorderThickness="1"></Border>
+                    </Grid>
+                </ClassicBorderDecorator>
+                <local:ColorPaletteControl ColorSelected="ColorPalette_OnColorSelected" Name="ColorPalette" Height="63"/>
+            </StackPanel>
         </StackPanel>
         
         <!-- Canvas -->
-        <Border Grid.Row="3" BorderBrush="Gray" BorderThickness="1" Margin="5" Background="{StaticResource BgBrush}">
+        <ClassicBorderDecorator Grid.Row="3" BorderStyle="Sunken" BorderThickness="2" Margin="5" Background="Gray">
             <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
                 <Canvas RenderOptions.EdgeMode="Aliased" RenderOptions.BitmapInterpolationMode="None" Name="CanvasContainer">
                     <Image Name="EditorCanvas"/>
                 </Canvas>
             </ScrollViewer>
-        </Border>
+        </ClassicBorderDecorator>
         
         <!-- Status Bar -->
         <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="5">

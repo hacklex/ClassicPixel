@@ -18,12 +18,14 @@ namespace PixelEditorApp
             Color = color;
         }
     }
+    
+    public delegate void ColorChangedEventHandler(Color selectedColor, bool isLeftButton);
 
     public partial class ColorPaletteControl : UserControl
     {
         public ObservableCollection<PaletteColor> Colors { get; } = new ObservableCollection<PaletteColor>();
 
-        public event EventHandler<Color>? ColorSelected;
+        public event ColorChangedEventHandler? ColorSelected;
 
         public ColorPaletteControl()
         {
@@ -37,7 +39,8 @@ namespace PixelEditorApp
         {
             if (e.Source is Border border && border.DataContext is PaletteColor paletteColor)
             {
-                ColorSelected?.Invoke(this, paletteColor.Color);
+                var isLeftButton = e.GetCurrentPoint(border).Properties.IsLeftButtonPressed;
+                ColorSelected?.Invoke(paletteColor.Color, isLeftButton);
             }
         }
 
@@ -65,6 +68,7 @@ namespace PixelEditorApp
         {
             Colors.Clear();
             
+            AddColor(Color.FromArgb(0, 0, 0, 0));   // transparent
             // Black, White, Gray
             AddColor(Color.FromRgb(0, 0, 0));
             AddColor(Color.FromRgb(255, 255, 255));
@@ -93,7 +97,6 @@ namespace PixelEditorApp
             AddColor(Color.FromRgb(255, 192, 203));   // Pink
             AddColor(Color.FromRgb(173, 216, 230));   // Light Blue
             
-            AddColor(Color.FromArgb(0, 0, 0, 0));   // Hot Pink
         }
     }
 }

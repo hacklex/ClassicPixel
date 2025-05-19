@@ -61,7 +61,7 @@ namespace PixelEditorApp
             
             if (_isDrawing && PencilTool.IsChecked == true)
             {
-                _pixelEditor.DrawPixel(x, y, ColorPicker.Color);
+                _pixelEditor.DrawPixel(x, y, LastDrawingColor);
                 RefreshCanvas();
             }
             else if (_isSelecting && SelectionTool.IsChecked == true)
@@ -72,6 +72,9 @@ namespace PixelEditorApp
             }
         }
 
+        private bool _lastButtonIsLeft;
+        private Color LastDrawingColor => _lastButtonIsLeft ? _selectedPrimaryColor : _selectedSecondaryColor;
+        
         private void OnCanvasPointerPressed(object? sender, PointerPressedEventArgs e)
         {
             var position = e.GetPosition(EditorCanvas);
@@ -82,11 +85,12 @@ namespace PixelEditorApp
                 return;
 
             _lastPosition = new Point(x, y);
+            _lastButtonIsLeft = e.GetCurrentPoint(EditorCanvas).Properties.IsLeftButtonPressed;
 
             if (PencilTool.IsChecked == true)
             {
                 _isDrawing = true;
-                _pixelEditor.DrawPixel(x, y, ColorPicker.Color);
+                _pixelEditor.DrawPixel(x, y, LastDrawingColor);
                 RefreshCanvas();
             }
             else if (SelectionTool.IsChecked == true)
@@ -97,7 +101,7 @@ namespace PixelEditorApp
             }
             else if (FillTool.IsChecked == true)
             {
-                _pixelEditor.FloodFill(x, y, ColorPicker.Color);
+                _pixelEditor.FloodFill(x, y, LastDrawingColor);
                 RefreshCanvas();
             }
         }
@@ -192,10 +196,22 @@ namespace PixelEditorApp
         {
             Environment.Exit(0);
         }
+        
+        private Color _selectedPrimaryColor = Colors.Black;
+        private Color _selectedSecondaryColor = Colors.White;
 
-        private void ColorPalette_OnColorSelected(object? sender, Color e)
+        private void ColorPalette_OnColorSelected(Color selectedColor, bool isLeftClicked)
         {
-            ColorPicker.Color = e;
+            if (isLeftClicked)
+            {
+                _selectedPrimaryColor = selectedColor;
+                PrimaryColorBorder.Background = new SolidColorBrush(selectedColor);
+            }
+            else
+            {
+                _selectedSecondaryColor = selectedColor;
+                SecondaryColorBorder.Background = new SolidColorBrush(selectedColor);
+            }
         }
     }
 }

@@ -208,7 +208,7 @@ namespace PixelEditorApp
             var bitmap = new Bitmap(stream);
             Width = bitmap.PixelSize.Width;
             Height = bitmap.PixelSize.Height;
-            var wb = new WriteableBitmap(bitmap.PixelSize, bitmap.Dpi, bitmap.Format, bitmap.AlphaFormat);
+            using var wb = new WriteableBitmap(bitmap.PixelSize, bitmap.Dpi, bitmap.Format, bitmap.AlphaFormat);
             bitmap.CopyPixels(wb.Lock(), AlphaFormat.Unpremul);
             
             _pixels = new Color[Width, Height];

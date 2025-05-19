@@ -6,11 +6,11 @@
              mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="100"
             
              x:Class="PixelEditorApp.ColorPaletteControl">
-    <Border BorderBrush="Gray" BorderThickness="1" Padding="2">
+    <ClassicBorderDecorator BorderStyle="Sunken" BorderThickness="2" Padding="2">
         <ItemsControl Name="ColorList">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
-                    <WrapPanel />
+                    <WrapPanel Orientation="Vertical" />
                 </ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
@@ -29,5 +29,5 @@
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>
-    </Border>
+    </ClassicBorderDecorator>
 </UserControl>
