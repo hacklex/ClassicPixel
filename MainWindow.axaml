@@ -74,7 +74,7 @@
                                 BorderBrush="Black" Width="24" Height="24" BorderThickness="1" />
                     </Grid>
                 </ClassicBorderDecorator>
-                <local:ColorPaletteControl DataContext="{Binding ColorPaletteViewModel}" Height="63"/>
+                <local:ColorPaletteControl DataContext="{Binding ColorPaletteViewModel}" Height="64"/>
             </StackPanel>
         </StackPanel>
         
