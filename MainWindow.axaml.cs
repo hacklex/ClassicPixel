@@ -172,6 +172,7 @@ namespace PixelEditorApp
                 
                 // Get the current mouse position
                 var mousePosition = e.GetPosition(EditorImage);
+                var positionInCanvas = e.GetPosition(CanvasContainer);
                 // Calculate new scale (zoom in or out)
                 double zoomFactor = e.Delta.Y > 0 ? 1.2 : 1 / 1.2;
                 double newPositionX = mousePosition.X * zoomFactor;
@@ -180,8 +181,8 @@ namespace PixelEditorApp
                 var oldLeft = Canvas.GetLeft(EditorImage);
                 var oldTop = Canvas.GetTop(EditorImage);
                 
-                var newLeft = oldLeft + newPositionX - mousePosition.X;
-                var newTop = oldTop + newPositionY - mousePosition.Y;
+                var newLeft = positionInCanvas.X - newPositionX;
+                var newTop = positionInCanvas.Y - newPositionY;
 
                 EditorImage.Width = EditorImage.Bounds.Width * zoomFactor;
                 EditorImage.Height = EditorImage.Bounds.Height * zoomFactor;

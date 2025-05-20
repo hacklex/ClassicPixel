@@ -89,12 +89,16 @@
                 <Canvas Name="ImageCanvas" 
                         RenderOptions.EdgeMode="Aliased" 
                         RenderOptions.BitmapInterpolationMode="None"
-                        Background="{StaticResource BgBrush}"
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch" >
+                    <Border Background="{StaticResource BgBrush}" 
+                            Canvas.Left="{Binding (Canvas.Left), ElementName=EditorImage}"
+                            Canvas.Top="{Binding (Canvas.Top), ElementName=EditorImage}"
+                            Height="{Binding Bounds.Height, ElementName=EditorImage}"
+                            Width="{Binding Bounds.Width, ElementName=EditorImage}"></Border>
                     <Image Name="EditorImage" 
                            Source="{Binding CanvasBitmap}"
-                           />
+                    />
                 </Canvas>
             </Grid>
         </ClassicBorderDecorator>
