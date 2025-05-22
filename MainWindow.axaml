@@ -5,10 +5,13 @@
         xmlns:vm="clr-namespace:PixelEditor.ViewModels"
         xmlns:pixelEditor="clr-namespace:PixelEditor"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
-        x:Class="PixelEditor.MainWindow"
-        FontFamily="Verdana"
+        x:Class="PixelEditor.MainWindow" 
+        Icon="/Assets/Bitmap16.png" 
         x:DataType="{x:Type vm:MainViewModel}"
-        RenderOptions.TextRenderingMode="Antialias"
+        RenderOptions.TextRenderingMode="SubpixelAntialias"
+        FontFamily="Segoe UI, SF Pro Display, Noto Sans, Cantarel"
+        TextBlock.LetterSpacing="0.4"
+        FontSize="12"
         Title="Pixel Art Editor">
     
     <Window.DataContext>
