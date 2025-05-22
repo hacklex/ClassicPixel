@@ -2,15 +2,12 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Markup.Xaml;
-using PixelEditorApp.ViewModels;
-using System;
-using System.Linq;
-using Avalonia.Media;
+using Classic.Avalonia.Theme;
+using PixelEditor.ViewModels;
 
 namespace PixelEditorApp
 {
-    public partial class MainWindow : Window
+    public partial class MainWindow : ClassicWindow
     {
         private bool _isDragging = false;
         private Point _lastPosition;

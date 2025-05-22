@@ -1,4 +1,4 @@
-<Window xmlns="https://github.com/avaloniaui"
+<ClassicWindow xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -18,6 +18,7 @@
     
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -43,25 +44,48 @@
             </MenuItem>
         </Menu>
         
+        <Separator Grid.Row="1"></Separator>
+        
         <!-- Tools -->
-        <WrapPanel Grid.Row="1">
-            <StackPanel Orientation="Horizontal" Margin="5">
-                <RadioButton Content="Pencil" IsChecked="{Binding IsPencilToolSelected}" Margin="5"/>
-                <RadioButton Content="Selection" IsChecked="{Binding IsSelectionToolSelected}" Margin="5"/>
-                <RadioButton Content="Fill" IsChecked="{Binding IsFillToolSelected}" Margin="5"/>
+        <WrapPanel Grid.Row="2">
+            <StackPanel Orientation="Horizontal" Margin="5 0">
+                <StackPanel.Styles>
+                    <Style Selector="ToggleButton:checked Grid">
+                        <Setter Property="Margin" Value="1 1 -1 -1"></Setter>
+                    </Style>
+                </StackPanel.Styles>
                 
-                <Separator Height="24" Margin="5,0" Background="LightGray"/>
+                <Button Width="22" Height="22" Padding="0" Margin="0 0 5 0">
+                    <Image Source="Assets/Pencil16.png"></Image>
+                </Button>
                 
-                <!-- Pixel Scale Controls -->
-                <TextBlock Text="Pixel Scale:" VerticalAlignment="Center" Margin="5"/>
-                <Button Content="-" Command="{Binding DecreaseScaleCommand}" Width="30" Margin="2"/>
-                <TextBlock Text="{Binding PixelScale, StringFormat='{}{0}x'}" VerticalAlignment="Center" MinWidth="30" TextAlignment="Center"/>
-                <Button Content="+" Command="{Binding IncreaseScaleCommand}" Width="30" Margin="2"/>
+                
+                
+                <ToggleButton Width="22" Height="22" Padding="0" IsChecked="{Binding IsSelectionToolSelected}" Focusable="False">
+                    <Grid Width="16" Height="16">
+                        <Image Margin="0" Height="16" Source="/Assets/Selection16.png"></Image>
+                    </Grid>
+                </ToggleButton>
+                <ToggleButton Width="22" Height="22" Padding="0" IsChecked="{Binding IsPencilToolSelected}" Focusable="False">
+                    <Grid Width="16" Height="16">
+                        <Image Margin="0" Height="16" Source="/Assets/Pencil16.png"></Image>
+                    </Grid>
+                </ToggleButton>
+                <ToggleButton Width="22" Height="22" Padding="0" IsChecked="{Binding IsFillToolSelected}" Focusable="False">
+                    <Grid Width="16" Height="16">
+                        <Image Margin="0" Height="16" Source="/Assets/Fill16.png"></Image>
+                    </Grid>
+                </ToggleButton>
+                
+                <RadioButton IsVisible="False" Content="Pencil" IsChecked="{Binding IsPencilToolSelected}" Margin="5"/>
+                <RadioButton IsVisible="False" Content="Selection" IsChecked="{Binding IsSelectionToolSelected}" Margin="5"/>
+                <RadioButton IsVisible="False" Content="Fill" IsChecked="{Binding IsFillToolSelected}" Margin="5"/>
+                 
             </StackPanel>
         </WrapPanel>
 
         <!-- Color Palette -->
-        <StackPanel Grid.Row="2" Margin="5">
+        <StackPanel Grid.Row="3" Margin="5">
             <TextBlock Text="Color Palette:" Margin="0,0,0,5"/>
             <StackPanel Orientation="Horizontal">
                 <ClassicBorderDecorator BorderStyle="Sunken" BorderThickness="1" Margin="0 0 5 0">
@@ -84,7 +108,7 @@
                   PointerMoved="Canvas_PointerMoved"
                   PointerReleased="Canvas_PointerReleased"
                   PointerWheelChanged="CanvasContainer_PointerWheelChanged"
-            Background="Gray" Grid.Row="3" BorderStyle="Sunken" BorderThickness="2" Margin="5" >
+            Background="Gray" Grid.Row="4" BorderStyle="Sunken" BorderThickness="2" Margin="5 0" >
             <Grid x:Name="CanvasContainer" ClipToBounds="True">
                 <Canvas Name="ImageCanvas" 
                         RenderOptions.EdgeMode="Aliased" 
@@ -105,13 +129,13 @@
 
         
         <!-- Status Bar -->
-        <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="5">
-            <TextBlock Text="{Binding StatusText}" Margin="5"/>
-            <TextBlock Text="{Binding PositionText}" Margin="5"/>
-            <TextBlock Text="{Binding CanvasSizeText}" Margin="5"/>
-            <TextBlock>
+        <StackPanel Grid.Row="5" Orientation="Horizontal" Margin="5 1">
+            <TextBlock VerticalAlignment="Center" Text="{Binding StatusText}" Margin="0 0 5 0"/>
+            <TextBlock VerticalAlignment="Center" Text="{Binding PositionText}" Margin="5 0"/>
+            <TextBlock VerticalAlignment="Center" Text="{Binding CanvasSizeText}" Margin="5 0"/>
+            <TextBlock VerticalAlignment="Center" Margin="5 0">
                 Scaled Canvas: <Run Text="{Binding Bounds.Width, ElementName=EditorImage}" />x<Run Text="{Binding Bounds.Height, ElementName=EditorImage}" />
             </TextBlock>
         </StackPanel>
     </Grid>
-</Window>
+</ClassicWindow>
