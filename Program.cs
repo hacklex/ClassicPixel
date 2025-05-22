@@ -1,9 +1,9 @@
-﻿using Avalonia;
-using System;
+﻿using System;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 
-namespace PixelEditorApp;
+namespace PixelEditor;
 
 internal class Program
 {

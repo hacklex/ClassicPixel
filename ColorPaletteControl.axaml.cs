@@ -1,13 +1,11 @@
-using Avalonia;
+using System.Collections.ObjectModel;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
-using System;
-using System.Collections.ObjectModel;
-using PixelEditorApp.ViewModels;
+using PixelEditor.ViewModels;
 
-namespace PixelEditorApp
+namespace PixelEditor
 {
     public class PaletteColor
     {

@@ -5,7 +5,7 @@ using Avalonia;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
 
-namespace PixelEditorApp;
+namespace PixelEditor;
 
 public class ColorToBrushConverter : IValueConverter
 {

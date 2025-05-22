@@ -1,6 +1,6 @@
 using System;
 
-namespace PixelEditorApp.ViewModels
+namespace PixelEditor.ViewModels
 {
     public static class CommandManager
     {

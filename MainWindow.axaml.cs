@@ -5,7 +5,7 @@ using Avalonia.Interactivity;
 using Classic.Avalonia.Theme;
 using PixelEditor.ViewModels;
 
-namespace PixelEditorApp
+namespace PixelEditor
 {
     public partial class MainWindow : ClassicWindow
     {

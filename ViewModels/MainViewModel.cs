@@ -1,12 +1,11 @@
 using System;
-using Avalonia.Media;
-using Avalonia.Media.Imaging;
 using System.IO;
 using System.Windows.Input;
 using Avalonia.Controls;
-using System.Threading.Tasks;
+using Avalonia.Media;
+using Avalonia.Media.Imaging;
 
-namespace PixelEditorApp.ViewModels
+namespace PixelEditor.ViewModels
 {
     public class MainViewModel : ViewModelBase
     {

@@ -1,7 +1,7 @@
 using System;
 using System.Windows.Input;
 
-namespace PixelEditorApp.ViewModels
+namespace PixelEditor.ViewModels
 {
     public class NewCanvasDialogViewModel : ViewModelBase
     {

@@ -1,7 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 
-namespace PixelEditorApp
+namespace PixelEditor
 {
     public partial class NewCanvasDialog : Window
     {

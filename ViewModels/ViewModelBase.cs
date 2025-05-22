@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace PixelEditorApp.ViewModels
+namespace PixelEditor.ViewModels
 {
     public class ViewModelBase : INotifyPropertyChanged
     {

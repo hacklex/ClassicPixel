@@ -1,8 +1,8 @@
-using Avalonia.Media;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
+using Avalonia.Media;
 
-namespace PixelEditorApp.ViewModels
+namespace PixelEditor.ViewModels
 {
     public class ColorPaletteViewModel : ViewModelBase
     {
