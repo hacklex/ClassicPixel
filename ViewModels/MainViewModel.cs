@@ -1,78 +1,50 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Windows.Input;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace PixelEditor.ViewModels
 {
-    public class MainViewModel : ViewModelBase
+    public partial class MainViewModel : ViewModelBase
     {
-        private PixelEditor _pixelEditor;
-        private WriteableBitmap? _canvasBitmap;
-        private Color _primaryColor = Colors.Black;
-        private Color _secondaryColor = Colors.White;
-        private ToolType _selectedTool = ToolType.Pencil;
-        private string _statusText = "Ready";
-        private string _positionText = "Position: 0, 0";
-        private string _canvasSizeText = "Size: 32x32";
-        private int _magicWandTolerance = 32;
-        private int _selectionStartX;
-        private int _selectionStartY;
-        private int _selectionEndX;
-        private int _selectionEndY;
-        private bool _hasSelection;
+        // Using ObservableProperty attributes to auto-generate property code
+        [ObservableProperty] private WriteableBitmap? _canvasBitmap;
+        
+        [ObservableProperty] private Color _primaryColor = Colors.Black;
+        [ObservableProperty] private Color _secondaryColor = Colors.White;
+        
+        [ObservableProperty] private ToolType _selectedTool = ToolType.Pencil;
+        
+        [ObservableProperty] private string _statusText = "Ready";
+        [ObservableProperty] private string _positionText = "Position: 0, 0";
+        [ObservableProperty] private string _canvasSizeText = "Size: 32x32";
+        
+        [ObservableProperty] private int _magicWandTolerance = 32;
+        
+        [ObservableProperty] private int _selectionStartX;
+        [ObservableProperty] private int _selectionStartY;
+        [ObservableProperty] private int _selectionEndX;
+        [ObservableProperty] private int _selectionEndY;
+        
+        [ObservableProperty] private bool _hasSelection;
+        
+        private PixelEditor _pixelEditor; 
 
         private bool ShouldShowToleranceSetup(ToolType currentTool) => currentTool is ToolType.MagicWand or ToolType.Eraser or ToolType.Selection or ToolType.Fill;
         public bool IsToleranceSetupVisible => ShouldShowToleranceSetup(SelectedTool);
-        
-        // Magic wand tolerance property with validation
-        public int MagicWandTolerance
-        {
-            get => _magicWandTolerance;
-            set
-            {
-                // Ensure the value is between 0 and 255
-                int newValue = Math.Clamp(value, 0, 255);
-                if (SetProperty(ref _magicWandTolerance, newValue))
-                {
-                    StatusText = $"Magic Wand Tolerance: {_magicWandTolerance}";
-                }
-            }
-        }
-        
-        public Color PrimaryColor
-        {
-            get => _primaryColor;
-            set => SetProperty(ref _primaryColor, value);
-        }
-        
-        public Color SecondaryColor
-        {
-            get => _secondaryColor;
-            set => SetProperty(ref _secondaryColor, value);
-        }
-        
-        public WriteableBitmap? CanvasBitmap
-        {
-            get => _canvasBitmap;
-            private set => SetProperty(ref _canvasBitmap, value);
-        }
-        
-        public ToolType SelectedTool
-        {
-            get => _selectedTool;
-            set
-            {
-                var oldShouldShowTolerance = ShouldShowToleranceSetup(_selectedTool);
-                SetProperty(ref _selectedTool, value);
-                var newShouldShowTolerance = ShouldShowToleranceSetup(value);
-                if (oldShouldShowTolerance != newShouldShowTolerance) OnPropertyChanged(nameof(IsToleranceSetupVisible));
-            }
-        }
 
+        protected override void OnPropertyChanged(PropertyChangedEventArgs e)
+        {
+            base.OnPropertyChanged(e);
+            if (e.PropertyName == nameof(MagicWandTolerance)) StatusText = $"Magic Wand Tolerance: {MagicWandTolerance}";
+            if (e.PropertyName == nameof(SelectedTool)) OnPropertyChanged(nameof(IsToleranceSetupVisible));
+        }
+        
         // Convenience properties for backward compatibility and readability in code
         public bool IsPencilToolSelected => SelectedTool == ToolType.Pencil;
         public bool IsSelectionToolSelected => SelectedTool == ToolType.Selection;
@@ -80,55 +52,7 @@ namespace PixelEditor.ViewModels
         public bool IsFillToolSelected => SelectedTool == ToolType.Fill;
         public bool IsEraserToolSelected => SelectedTool == ToolType.Eraser;
         public bool IsColorPickerToolSelected => SelectedTool == ToolType.ColorPicker;
-
-        public bool HasSelection
-        {
-            get => _hasSelection;
-            private set => SetProperty(ref _hasSelection, value);
-        }
-        
-        public string StatusText 
-        { 
-            get => _statusText;
-            set => SetProperty(ref _statusText, value);
-        }
-        
-        public string PositionText 
-        { 
-            get => _positionText;
-            set => SetProperty(ref _positionText, value);
-        }
-        
-        public string CanvasSizeText 
-        { 
-            get => _canvasSizeText;
-            set => SetProperty(ref _canvasSizeText, value);
-        }
-
-        public int SelectionStartX 
-        { 
-            get => _selectionStartX;
-            private set => SetProperty(ref _selectionStartX, value);
-        }
-        
-        public int SelectionStartY 
-        { 
-            get => _selectionStartY;
-            private set => SetProperty(ref _selectionStartY, value);
-        }
-        
-        public int SelectionEndX 
-        { 
-            get => _selectionEndX;
-            private set => SetProperty(ref _selectionEndX, value);
-        }
-        
-        public int SelectionEndY 
-        { 
-            get => _selectionEndY;
-            private set => SetProperty(ref _selectionEndY, value);
-        }
-        
+       
         public List<(int startX, int startY, int endX, int endY)> SelectionRegions { get; private set; } = [];
 
         public ColorPaletteViewModel ColorPaletteViewModel { get; } = new();
@@ -160,7 +84,6 @@ namespace PixelEditor.ViewModels
             MagicWandSelectCommand = new RelayCommand(OnMagicWandSelect);
             UpdatePositionCommand = new RelayCommand(OnUpdatePosition);
             AddCurrentColorCommand = new RelayCommand(_ => ColorPaletteViewModel.AddColor(PrimaryColor));
-            
             ColorPaletteViewModel.ColorSelected += OnColorSelected;
             UpdateCanvasBitmap();
         }
@@ -431,18 +354,25 @@ namespace PixelEditor.ViewModels
             }
         }
 
-        public void ClearSelection()
+        public void DeleteSelection()
         {
             if (HasSelection)
             {
+                foreach (var region in SelectionRegions)
+                {
+                    // Erase the selected area by setting pixels to transparent
+                    for (int y = region.startY; y <= region.endY; y++)
+                    {
+                        for (int x = region.startX; x <= region.endX; x++)
+                        {
+                            _pixelEditor.DrawPixel(x, y, Color.FromArgb(0, 0, 0, 0));
+                        }
+                    }
+                }
+                UpdateCanvasBitmap();
                 HasSelection = false;
-                // Clear all selection regions
                 SelectionRegions.Clear();
-                
-                // Clear the selection in the model
-                _pixelEditor.ClearSelection();
-                
-                StatusText = "Selection cleared";
+                StatusText = "Erased selection";
             }
         }
         
@@ -538,9 +468,6 @@ namespace PixelEditor.ViewModels
                     
                     if (HasSelection)
                     {
-                        // For UI, we'll still use the last selection for display purposes
-                        _pixelEditor.FinishSelection(left, top, right, bottom);
-                        
                         int width = right - left + 1;
                         int height = bottom - top + 1;
                         
@@ -554,7 +481,6 @@ namespace PixelEditor.ViewModels
                 }
                 else if (SelectionRegions.Count == 0)
                 {
-                    _pixelEditor.ClearSelection();
                     HasSelection = false;
                     StatusText = "Selection canceled";
                 }

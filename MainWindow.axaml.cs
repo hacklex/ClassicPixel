@@ -569,6 +569,9 @@ namespace PixelEditor
                 case Key.X:
                     ViewModel.SwapSelectedColors();
                     break;
+                case Key.Delete:
+                    ViewModel.DeleteSelection();
+                    break;
             }
         }
 
