@@ -20,6 +20,7 @@ namespace PixelEditor.ViewModels
         private bool _isMagicWandToolSelected;
         private bool _isFillToolSelected;
         private bool _isEraserToolSelected;
+        private bool _isColorPickerToolSelected;
         private string _statusText = "Ready";
         private string _positionText = "Position: 0, 0";
         private string _canvasSizeText = "Size: 32x32";
@@ -98,6 +99,12 @@ namespace PixelEditor.ViewModels
             get => _isEraserToolSelected; 
             set => SetProperty(ref _isEraserToolSelected, value); 
         }
+        
+        public bool IsColorPickerToolSelected 
+        { 
+            get => _isColorPickerToolSelected; 
+            set => SetProperty(ref _isColorPickerToolSelected, value); 
+        }
 
         public bool HasSelection
         {
@@ -171,12 +178,12 @@ namespace PixelEditor.ViewModels
             OpenCommand = new RelayCommand(_ => OnOpen());
             SaveCommand = new RelayCommand(_ => OnSave());
             ExitCommand = new RelayCommand(_ => OnExit());
-            DrawPixelCommand = new RelayCommand(p => OnDrawPixel(p));
-            SelectionStartCommand = new RelayCommand(p => OnSelectionStart(p));
-            SelectionUpdateCommand = new RelayCommand(p => OnSelectionUpdate(p));
-            SelectionEndCommand = new RelayCommand(p => OnSelectionEnd(p));
-            MagicWandSelectCommand = new RelayCommand(p => OnMagicWandSelect(p));
-            UpdatePositionCommand = new RelayCommand(p => OnUpdatePosition(p));
+            DrawPixelCommand = new RelayCommand(OnDrawPixel);
+            SelectionStartCommand = new RelayCommand(OnSelectionStart);
+            SelectionUpdateCommand = new RelayCommand(OnSelectionUpdate);
+            SelectionEndCommand = new RelayCommand(OnSelectionEnd);
+            MagicWandSelectCommand = new RelayCommand(OnMagicWandSelect);
+            UpdatePositionCommand = new RelayCommand(OnUpdatePosition);
             AddCurrentColorCommand = new RelayCommand(_ => ColorPaletteViewModel.AddColor(PrimaryColor));
             
             IncreaseMagicWandToleranceCommand = new RelayCommand(_ => MagicWandTolerance += 8);
@@ -350,6 +357,17 @@ namespace PixelEditor.ViewModels
                     {
                         _pixelEditor.FloodFill(canvasX, canvasY, args.IsLeftButton ? PrimaryColor : SecondaryColor);
                         UpdateCanvasBitmap();
+                    }
+                    else if (IsColorPickerToolSelected)
+                    {
+                        if (args.IsLeftButton)
+                        {
+                            PrimaryColor = _pixelEditor.GetPixelColor(canvasX, canvasY);
+                        }
+                        else
+                        {
+                            SecondaryColor = _pixelEditor.GetPixelColor(canvasX, canvasY);
+                        }
                     }
                     else if (IsEraserToolSelected)
                     {
@@ -780,31 +798,24 @@ namespace PixelEditor.ViewModels
             if (IsSelectionToolSelected)
             {
                 // Switch to Magic Wand
+                // Neither selection tool was active, so default to Selection Tool
+                IsPencilToolSelected = false;
+                IsEraserToolSelected = false;
+                IsFillToolSelected = false;
+                IsColorPickerToolSelected = false;
                 IsSelectionToolSelected = false;
                 IsMagicWandToolSelected = true;
-                IsPencilToolSelected = false;
-                IsEraserToolSelected = false;
-                IsFillToolSelected = false;
                 StatusText = "Magic Wand Tool [s]";
-            }
-            else if (IsMagicWandToolSelected)
-            {
-                // Switch to Selection Tool
-                IsSelectionToolSelected = true;
-                IsMagicWandToolSelected = false;
-                IsPencilToolSelected = false;
-                IsEraserToolSelected = false;
-                IsFillToolSelected = false;
-                StatusText = "Selection Tool [s]";
             }
             else
             {
                 // Neither selection tool was active, so default to Selection Tool
-                IsSelectionToolSelected = true;
                 IsMagicWandToolSelected = false;
                 IsPencilToolSelected = false;
                 IsEraserToolSelected = false;
                 IsFillToolSelected = false;
+                IsColorPickerToolSelected = false;
+                IsSelectionToolSelected = true;
                 StatusText = "Selection Tool [s]";
             }
         }
@@ -815,31 +826,23 @@ namespace PixelEditor.ViewModels
             if (IsPencilToolSelected)
             {
                 // Switch to Eraser
-                IsPencilToolSelected = false;
-                IsEraserToolSelected = true;
-                IsSelectionToolSelected = false;
                 IsMagicWandToolSelected = false;
+                IsPencilToolSelected = false;
                 IsFillToolSelected = false;
+                IsColorPickerToolSelected = false;
+                IsSelectionToolSelected = false;
+                IsEraserToolSelected = true; 
                 StatusText = "Eraser Tool [b]";
             }
-            else if (IsEraserToolSelected)
+            else 
             {
                 // Switch to Pencil
-                IsPencilToolSelected = true;
-                IsEraserToolSelected = false;
-                IsSelectionToolSelected = false;
                 IsMagicWandToolSelected = false;
                 IsFillToolSelected = false;
-                StatusText = "Pencil Tool [b]";
-            }
-            else
-            {
-                // Neither drawing tool was active, so default to Pencil
-                IsPencilToolSelected = true;
-                IsEraserToolSelected = false;
+                IsColorPickerToolSelected = false;
                 IsSelectionToolSelected = false;
-                IsMagicWandToolSelected = false;
-                IsFillToolSelected = false;
+                IsEraserToolSelected = false; 
+                IsPencilToolSelected = true;
                 StatusText = "Pencil Tool [b]";
             }
         }
@@ -847,12 +850,24 @@ namespace PixelEditor.ViewModels
         public void SelectFillTool()
         {
             // Switch to Fill Tool
-            IsFillToolSelected = true;
-            IsPencilToolSelected = false;
-            IsEraserToolSelected = false;
             IsSelectionToolSelected = false;
             IsMagicWandToolSelected = false;
-            StatusText = "Fill Tool [f]";
+            IsPencilToolSelected = false;
+            IsEraserToolSelected = false;
+            IsColorPickerToolSelected = false; 
+            IsFillToolSelected = true;
+            StatusText = "Flood Fill [f]";
+        }
+                    
+        public void SelectColorPickerTool()
+        {
+            IsSelectionToolSelected = false;
+            IsMagicWandToolSelected = false;
+            IsPencilToolSelected = false;
+            IsFillToolSelected = false;
+            IsEraserToolSelected = false;
+            IsColorPickerToolSelected = true; 
+            StatusText = "Color Picker [k]";
         }
 
         public void SwapSelectedColors() => (PrimaryColor, SecondaryColor) = (SecondaryColor, PrimaryColor);

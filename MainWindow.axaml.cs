@@ -124,6 +124,20 @@ namespace PixelEditor
                     // Update the selection overlay for magic wand selection
                     UpdateSelectionOverlay(EditorImage.Bounds.Width, EditorImage.Bounds.Height);
                 }
+                else if (ViewModel.IsColorPickerToolSelected)
+                {
+                    Color pickedColor = ViewModel.GetPixelColor(x, y);
+                    if (isLeftButton)
+                    {
+                        ViewModel.PrimaryColor = pickedColor;
+                        ViewModel.StatusText = $"Primary color set to: {pickedColor}";
+                    }
+                    else
+                    {
+                        ViewModel.SecondaryColor = pickedColor;
+                        ViewModel.StatusText = $"Secondary color set to: {pickedColor}";
+                    }
+                }
                 else
                 {
                     ViewModel.DrawPixelCommand.Execute(new PixelEventArgs(x, y, isLeftButton, _lastMouseDownColor));
@@ -542,6 +556,10 @@ namespace PixelEditor
                     break;
                 case Key.F:
                     ViewModel.SelectFillTool();
+                    e.Handled = true;
+                    break;
+                case Key.K:
+                    ViewModel.SelectColorPickerTool();
                     e.Handled = true;
                     break;
                 case Key.X:
