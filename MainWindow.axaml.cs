@@ -1,7 +1,10 @@
+using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media;
+using Avalonia.Threading;
 using Classic.Avalonia.Theme;
 using PixelEditor.ViewModels;
 
@@ -19,6 +22,11 @@ namespace PixelEditor
         
         // Image position and zoom properties
         private Point _lastImagePosition;
+        
+        // Selection animation fields
+        private System.Timers.Timer _selectionAnimationTimer;
+        private int _selectionAnimationOffset = 0;
+        private bool[,]? _selectionMap;
 
         public MainWindow()
         {
@@ -27,6 +35,29 @@ namespace PixelEditor
             // Center image when window is loaded
             this.Loaded += MainWindow_Loaded;
             this.SizeChanged += MainWindow_SizeChanged;
+            
+            // Initialize selection animation timer
+            _selectionAnimationTimer = new System.Timers.Timer(100); // Animation frame every 100ms
+            _selectionAnimationTimer.Elapsed += OnSelectionAnimationTick;
+            _selectionAnimationTimer.AutoReset = true;
+            
+            // Update selection overlay when selection properties change
+            this.PropertyChanged += (s, e) => {
+                if (e.Property?.Name == "DataContext" && DataContext is MainViewModel)
+                {
+                    var vm = (MainViewModel)DataContext;
+                    vm.PropertyChanged += (sender, args) => {
+                        if (args.PropertyName == nameof(MainViewModel.HasSelection) ||
+                            args.PropertyName == nameof(MainViewModel.SelectionStartX) ||
+                            args.PropertyName == nameof(MainViewModel.SelectionStartY) ||
+                            args.PropertyName == nameof(MainViewModel.SelectionEndX) ||
+                            args.PropertyName == nameof(MainViewModel.SelectionEndY))
+                        {
+                            UpdateSelectionOverlay();
+                        }
+                    };
+                }
+            };
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e) => CenterCanvas();
@@ -72,6 +103,9 @@ namespace PixelEditor
                     ViewModel.SelectionStartCommand.Execute(new PixelEventArgs(x, y, isLeftButton));
                     _selectionStart = adjustedPoint;
                     _isSelecting = true;
+                    
+                    // Initialize the selection overlay when starting selection
+                    UpdateSelectionOverlay();
                 }
                 else
                 {
@@ -120,6 +154,9 @@ namespace PixelEditor
                 {
                     ViewModel.SelectionUpdateCommand.Execute(new SelectionEventArgs(
                         (int)_selectionStart.X, (int)_selectionStart.Y, x, y));
+                    
+                    // Update the selection overlay whenever selection changes
+                    UpdateSelectionOverlay();
                 }
                 else
                 {
@@ -157,6 +194,9 @@ namespace PixelEditor
                     (int)_selectionStart.X, (int)_selectionStart.Y, x, y));
                 
                 _isSelecting = false;
+                
+                // Update the selection overlay after ending selection
+                UpdateSelectionOverlay();
             }
         }
 
@@ -185,6 +225,9 @@ namespace PixelEditor
                 EditorImage.Height = EditorImage.Bounds.Height * zoomFactor;
                 Canvas.SetLeft(EditorImage, newLeft);
                 Canvas.SetTop(EditorImage, newTop);
+                
+                // Update selection outline
+                UpdateSelectionOverlay();
             }
         }
 
@@ -195,6 +238,168 @@ namespace PixelEditor
             {
                 CanvasContainer_PointerWheelChanged(sender, e);
             }
+        }
+        
+        private void UpdateSelectionOverlay()
+        {
+            if (ViewModel == null || !ViewModel.HasSelection || SelectionPath == null)
+            {
+                if (_selectionAnimationTimer.Enabled)
+                {
+                    _selectionAnimationTimer.Stop();
+                }
+                return;
+            }
+                
+            // Calculate the pixel size based on the image scale
+            double pixelWidth = EditorImage.Bounds.Width / ImageWidth;
+            double pixelHeight = EditorImage.Bounds.Height / ImageHeight;
+            
+            // Create selection map if needed
+            int selWidth = ImageWidth;
+            int selHeight = ImageHeight;
+            if (_selectionMap == null || _selectionMap.GetLength(0) != selWidth || _selectionMap.GetLength(1) != selHeight)
+            {
+                _selectionMap = new bool[selWidth, selHeight];
+            }
+            
+            // Clear selection map
+            for (int x = 0; x < selWidth; x++)
+            {
+                for (int y = 0; y < selHeight; y++)
+                {
+                    _selectionMap[x, y] = false;
+                }
+            }
+            
+            // Fill the selection map with the rectangular selection
+            int left = Math.Min(ViewModel.SelectionStartX, ViewModel.SelectionEndX);
+            int top = Math.Min(ViewModel.SelectionStartY, ViewModel.SelectionEndY);
+            int right = Math.Max(ViewModel.SelectionStartX, ViewModel.SelectionEndX);
+            int bottom = Math.Max(ViewModel.SelectionStartY, ViewModel.SelectionEndY);
+            
+            for (int x = left; x <= right; x++)
+            {
+                for (int y = top; y <= bottom; y++)
+                {
+                    if (x >= 0 && x < selWidth && y >= 0 && y < selHeight)
+                    {
+                        _selectionMap[x, y] = true;
+                    }
+                }
+            }
+            
+            // Build the geometry for the selection outline
+            var pathBuilder = new Avalonia.Media.PathGeometry();
+            
+            // Check each cell in the selection map to find border edges
+            for (int x = 0; x < selWidth; x++)
+            {
+                for (int y = 0; y < selHeight; y++)
+                {
+                    if (_selectionMap[x, y])
+                    {
+                        // Check all four sides of the pixel
+                        
+                        // Top edge (if above pixel is not selected or is edge)
+                        if (y == 0 || !_selectionMap[x, y-1])
+                        {
+                            var figure = new Avalonia.Media.PathFigure
+                            {
+                                StartPoint = new Point(x * pixelWidth, y * pixelHeight),
+                                IsClosed = false
+                            };
+                            figure.Segments.Add(new Avalonia.Media.LineSegment
+                            {
+                                Point = new Point((x + 1) * pixelWidth, y * pixelHeight)
+                            });
+                            pathBuilder.Figures.Add(figure);
+                        }
+                        
+                        // Right edge (if right pixel is not selected or is edge)
+                        if (x == selWidth - 1 || !_selectionMap[x+1, y])
+                        {
+                            var figure = new Avalonia.Media.PathFigure
+                            {
+                                StartPoint = new Point((x + 1) * pixelWidth, y * pixelHeight),
+                                IsClosed = false
+                            };
+                            figure.Segments.Add(new Avalonia.Media.LineSegment
+                            {
+                                Point = new Point((x + 1) * pixelWidth, (y + 1) * pixelHeight)
+                            });
+                            pathBuilder.Figures.Add(figure);
+                        }
+                        
+                        // Bottom edge (if below pixel is not selected or is edge)
+                        if (y == selHeight - 1 || !_selectionMap[x, y+1])
+                        {
+                            var figure = new Avalonia.Media.PathFigure
+                            {
+                                StartPoint = new Point((x + 1) * pixelWidth, (y + 1) * pixelHeight),
+                                IsClosed = false
+                            };
+                            figure.Segments.Add(new Avalonia.Media.LineSegment
+                            {
+                                Point = new Point(x * pixelWidth, (y + 1) * pixelHeight)
+                            });
+                            pathBuilder.Figures.Add(figure);
+                        }
+                        
+                        // Left edge (if left pixel is not selected or is edge)
+                        if (x == 0 || !_selectionMap[x-1, y])
+                        {
+                            var figure = new Avalonia.Media.PathFigure
+                            {
+                                StartPoint = new Point(x * pixelWidth, (y + 1) * pixelHeight),
+                                IsClosed = false
+                            };
+                            figure.Segments.Add(new Avalonia.Media.LineSegment
+                            {
+                                Point = new Point(x * pixelWidth, y * pixelHeight)
+                            });
+                            pathBuilder.Figures.Add(figure);
+                        }
+                    }
+                }
+            }
+            
+            // Apply the geometry to the path
+            SelectionPath.Data = pathBuilder;
+            
+            // Make sure animation timer is running
+            if (!_selectionAnimationTimer.Enabled)
+            {
+                _selectionAnimationTimer.Start();
+            }
+        }
+        
+        protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+        {
+            base.OnPropertyChanged(change);
+            
+            // Update selection overlay when image bounds change
+            if (change.Property == Image.SourceProperty && change.Sender == EditorImage)
+            {
+                UpdateSelectionOverlay();
+            }
+        }
+        
+        private void OnSelectionAnimationTick(object? sender, System.Timers.ElapsedEventArgs e)
+        {
+            // Dispatch to UI thread since we're modifying UI elements
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (SelectionPath?.Stroke is VisualBrush visualBrush)
+                {
+                    // Update the animation offset for the marching ants effect
+                    _selectionAnimationOffset = (_selectionAnimationOffset + 1) % 8;
+                    
+                    // Update the brush to create the animated marching effect
+                    visualBrush.DestinationRect = new Avalonia.RelativeRect(
+                        _selectionAnimationOffset, 0, 8, 8, Avalonia.RelativeUnit.Absolute);
+                }
+            });
         }
     }
 }

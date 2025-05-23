@@ -4,6 +4,7 @@ using System.Windows.Input;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using System.Timers;
 
 namespace PixelEditor.ViewModels
 {
@@ -11,6 +12,7 @@ namespace PixelEditor.ViewModels
     {
         private PixelEditor _pixelEditor;
         private WriteableBitmap? _canvasBitmap;
+        private Timer _selectionAnimationTimer;
         private Color _primaryColor = Colors.Black;
         private Color _secondaryColor = Colors.White;
         private bool _isPencilToolSelected = true;
@@ -20,6 +22,11 @@ namespace PixelEditor.ViewModels
         private string _positionText = "Position: 0, 0";
         private string _canvasSizeText = "Size: 32x32";
         private int _pixelScale = 1;
+        private int _selectionStartX;
+        private int _selectionStartY;
+        private int _selectionEndX;
+        private int _selectionEndY;
+        private bool _hasSelection;
         
         // Add pixel scale property with validation
         public int PixelScale
@@ -27,11 +34,11 @@ namespace PixelEditor.ViewModels
             get => _pixelScale;
             set
             {
-                // Ensure value is between 1 and 10
+                // Ensure the value is between 1 and 10
                 int newValue = Math.Clamp(value, 1, 10);
                 if (SetProperty(ref _pixelScale, newValue))
                 {
-                    // Update bitmap when scale changes
+                    // Update bitmap when the scale changes
                     UpdateCanvasBitmap();
                     StatusText = $"Pixel Scale: {_pixelScale}x";
                 }
@@ -78,6 +85,12 @@ namespace PixelEditor.ViewModels
             set => SetProperty(ref _isFillToolSelected, value); 
         }
 
+        public bool HasSelection
+        {
+            get => _hasSelection;
+            private set => SetProperty(ref _hasSelection, value);
+        }
+        
         public string StatusText 
         { 
             get => _statusText;
@@ -96,6 +109,30 @@ namespace PixelEditor.ViewModels
             set => SetProperty(ref _canvasSizeText, value);
         }
 
+        public int SelectionStartX 
+        { 
+            get => _selectionStartX;
+            private set => SetProperty(ref _selectionStartX, value);
+        }
+        
+        public int SelectionStartY 
+        { 
+            get => _selectionStartY;
+            private set => SetProperty(ref _selectionStartY, value);
+        }
+        
+        public int SelectionEndX 
+        { 
+            get => _selectionEndX;
+            private set => SetProperty(ref _selectionEndX, value);
+        }
+        
+        public int SelectionEndY 
+        { 
+            get => _selectionEndY;
+            private set => SetProperty(ref _selectionEndY, value);
+        }
+        
         public ColorPaletteViewModel ColorPaletteViewModel { get; } = new();
 
         // Commands
@@ -128,6 +165,11 @@ namespace PixelEditor.ViewModels
             IncreaseScaleCommand = new RelayCommand(_ => PixelScale++);
             DecreaseScaleCommand = new RelayCommand(_ => PixelScale--);
 
+            // Initialize selection animation timer
+            _selectionAnimationTimer = new Timer(100); // Animation frame every 100ms
+            _selectionAnimationTimer.Elapsed += OnSelectionAnimationTick;
+            _selectionAnimationTimer.AutoReset = true;
+            
             ColorPaletteViewModel.ColorSelected += OnColorSelected;
             UpdateCanvasBitmap();
         }
@@ -329,7 +371,7 @@ namespace PixelEditor.ViewModels
             {
                 if (IsPencilToolSelected)
                 {
-                    // Convert screen coordinates to canvas coordinates based on pixel scale
+                    // Convert screen coordinates to canvas coordinates based on the pixel scale
                     int canvasX = args.X / PixelScale;
                     int canvasY = args.Y / PixelScale;
                     
@@ -342,7 +384,7 @@ namespace PixelEditor.ViewModels
                 }
                 else if (IsFillToolSelected)
                 {
-                    // Convert screen coordinates to canvas coordinates based on pixel scale
+                    // Convert screen coordinates to canvas coordinates based on the pixel scale
                     int canvasX = args.X / PixelScale;
                     int canvasY = args.Y / PixelScale;
                     
@@ -358,10 +400,23 @@ namespace PixelEditor.ViewModels
 
         private void OnSelectionStart(object? parameter)
         {
-            if (IsSelectionToolSelected && parameter is PixelEventArgs)
+            if (IsSelectionToolSelected && parameter is PixelEventArgs args)
             {
-                _pixelEditor.StartSelection();
-                UpdateCanvasBitmap();
+                // Convert screen coordinates to canvas coordinates
+                int canvasX = args.X / PixelScale;
+                int canvasY = args.Y / PixelScale;
+                
+                // Store selection start coordinates
+                SelectionStartX = canvasX;
+                SelectionStartY = canvasY;
+                
+                // Also set end coordinates to same position initially
+                SelectionEndX = canvasX;
+                SelectionEndY = canvasY;
+                
+                // We're making a rectangular selection in the UI now
+                HasSelection = false; // Don't show selection until we have an actual area
+                StatusText = "Selection started";
             }
         }
 
@@ -381,11 +436,43 @@ namespace PixelEditor.ViewModels
                 endX = Math.Clamp(endX, 0, _pixelEditor.Width - 1);
                 endY = Math.Clamp(endY, 0, _pixelEditor.Height - 1);
                 
-                _pixelEditor.UpdateSelectionPreview(startX, startY, endX, endY);
-                UpdateCanvasBitmap();
+                // Update selection coordinates in view model
+                SelectionStartX = startX;
+                SelectionStartY = startY;
+                SelectionEndX = endX;
+                SelectionEndY = endY;
+                
+                // Only set HasSelection to true if we have an actual area
+                HasSelection = (startX != endX) || (startY != endY);
+                
+                if (HasSelection)
+                {
+                    StatusText = $"Selection: ({startX},{startY}) to ({endX},{endY})";
+                }
+                else
+                {
+                    StatusText = "Selecting...";
+                }
             }
         }
 
+        public void ClearSelection()
+        {
+            if (HasSelection)
+            {
+                HasSelection = false;
+                // We're not using the animation timer for selection anymore
+                // _selectionAnimationTimer.Stop();
+                
+                // Clear the selection in the model
+                _pixelEditor.ClearSelection();
+                
+                // No need to update bitmap for selection changes
+                // UpdateCanvasBitmap();
+                StatusText = "Selection cleared";
+            }
+        }
+        
         private void OnSelectionEnd(object? parameter)
         {
             if (IsSelectionToolSelected && parameter is SelectionEventArgs args)
@@ -402,11 +489,40 @@ namespace PixelEditor.ViewModels
                 endX = Math.Clamp(endX, 0, _pixelEditor.Width - 1);
                 endY = Math.Clamp(endY, 0, _pixelEditor.Height - 1);
                 
-                _pixelEditor.FinishSelection(startX, startY, endX, endY);
-                UpdateCanvasBitmap();
+                // Update final selection coordinates
+                SelectionStartX = startX;
+                SelectionStartY = startY;
+                SelectionEndX = endX;
+                SelectionEndY = endY;
+                
+                // Only set HasSelection to true if there's an actual area selected
+                HasSelection = (startX != endX) || (startY != endY);
+                
+                // Store the selection in the model for future operations
+                if (HasSelection)
+                {
+                    _pixelEditor.FinishSelection(startX, startY, endX, endY);
+                    
+                    int width = Math.Abs(endX - startX) + 1;
+                    int height = Math.Abs(endY - startY) + 1;
+                    StatusText = $"Selected area: {width}x{height}";
+                }
+                else
+                {
+                    _pixelEditor.ClearSelection();
+                    StatusText = "Selection canceled";
+                }
             }
         }
 
+        // This method is no longer needed as we're rendering selection in the UI
+        // Keeping it as a stub in case we need it later for other animations
+        private void OnSelectionAnimationTick(object? sender, ElapsedEventArgs e)
+        {
+            // The selection animation is now handled in the UI
+            // No longer updating PixelEditor selection animation
+        }
+        
         private void OnUpdatePosition(object? parameter)
         {
             if (parameter is PixelEventArgs args)

@@ -9,14 +9,14 @@
         Icon="/Assets/Bitmap.ico" 
         x:DataType="{x:Type vm:MainViewModel}"
         RenderOptions.TextRenderingMode="SubpixelAntialias"
-        RenderOptions.BitmapInterpolationMode="HighQuality"
+        RenderOptions.BitmapInterpolationMode="None"
         FontFamily="Segoe UI, SF Pro Display, Noto Sans, Cantarel"
         TextBlock.LetterSpacing="0.4"
         FontSize="12"
         Title="Pixel Art Editor">
     
     <Window.DataContext>
-        <vm:MainViewModel/>
+            <vm:MainViewModel  />
     </Window.DataContext>
     
     <Grid>
@@ -114,6 +114,7 @@
             Background="Gray" Grid.Row="4" BorderStyle="Sunken" BorderThickness="2" Margin="5 0" >
             <Grid x:Name="CanvasContainer" ClipToBounds="True">
                 <Canvas Name="ImageCanvas" 
+                        PointerWheelChanged="Canvas_PointerWheelChanged"
                         RenderOptions.EdgeMode="Aliased" 
                         RenderOptions.BitmapInterpolationMode="None"
                         HorizontalAlignment="Stretch"
@@ -126,6 +127,30 @@
                     <Image Name="EditorImage" 
                            Source="{Binding CanvasBitmap}"
                     />
+                    <Canvas Name="SelectionOverlay" 
+                            PointerWheelChanged="Canvas_PointerWheelChanged"
+                            IsVisible="{Binding HasSelection}"
+                            Canvas.Left="{Binding (Canvas.Left), ElementName=EditorImage}"
+                            Canvas.Top="{Binding (Canvas.Top), ElementName=EditorImage}"
+                            Width="{Binding Bounds.Width, ElementName=EditorImage}"
+                            Height="{Binding Bounds.Height, ElementName=EditorImage}">
+                        <Path Name="SelectionPath" 
+                              StrokeThickness="1"
+                              IsVisible="{Binding HasSelection}">
+                            <Path.Stroke>
+                                <VisualBrush TileMode="Tile" SourceRect="0,0,8,8" DestinationRect="0,0,8,8">
+                                    <VisualBrush.Visual>
+                                        <Canvas Width="8" Height="8">
+                                            <Path Data="M 0,0 L 4,0 L 4,4 L 0,4 Z" Fill="White" />
+                                            <Path Data="M 4,4 L 8,4 L 8,8 L 4,8 Z" Fill="White" />
+                                            <Path Data="M 4,0 L 8,0 L 8,4 L 4,4 Z" Fill="Black" />
+                                            <Path Data="M 0,4 L 4,4 L 4,8 L 0,8 Z" Fill="Black" />
+                                        </Canvas>
+                                    </VisualBrush.Visual>
+                                </VisualBrush>
+                            </Path.Stroke>
+                        </Path>
+                    </Canvas>
                 </Canvas>
             </Grid>
         </ClassicBorderDecorator>

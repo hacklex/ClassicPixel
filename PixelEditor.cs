@@ -5,6 +5,7 @@ using Avalonia;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
+using System.Linq;
 
 namespace PixelEditor
 {
@@ -13,6 +14,20 @@ namespace PixelEditor
         private Color[,] _pixels;
         private Color[,] _selectionOverlay;
         private bool _hasSelection;
+        private int _animationFrame = 0;
+        private readonly Color[] _selectionColors = new[] 
+        { 
+            Color.FromArgb(255, 255, 255, 255), 
+            Color.FromArgb(255, 230, 230, 230),
+            Color.FromArgb(255, 200, 200, 200),
+            Color.FromArgb(255, 170, 170, 170),
+            Color.FromArgb(255, 140, 140, 140),
+            Color.FromArgb(255, 110, 110, 110),
+            Color.FromArgb(255, 80, 80, 80),
+            Color.FromArgb(255, 50, 50, 50),
+            Color.FromArgb(255, 0, 0, 0)
+        };
+        private int _selectionLeft, _selectionTop, _selectionRight, _selectionBottom;
         
         public int Width { get; private set; }
         public int Height { get; private set; }
@@ -54,6 +69,7 @@ namespace PixelEditor
                 }
             }
             _hasSelection = true;
+            _animationFrame = 0;
         }
 
         public void UpdateSelectionPreview(int startX, int startY, int endX, int endY)
@@ -68,49 +84,64 @@ namespace PixelEditor
             }
 
             // Calculate selection rectangle
-            int left = Math.Min(startX, endX);
-            int top = Math.Min(startY, endY);
-            int right = Math.Max(startX, endX);
-            int bottom = Math.Max(startY, endY);
-
-            // Draw selection border (semi-transparent blue)
-            Color selectionColor = Color.FromArgb(128, 0, 0, 255);
-
+            _selectionLeft = Math.Min(startX, endX);
+            _selectionTop = Math.Min(startY, endY);
+            _selectionRight = Math.Max(startX, endX);
+            _selectionBottom = Math.Max(startY, endY);
+        
+            // Draw selection border using current animation frame color
+            Color selectionColor = _selectionColors[_animationFrame % _selectionColors.Length];
+        
+            // Draw the selection border
+            DrawSelectionBorder(_selectionLeft, _selectionTop, _selectionRight, _selectionBottom, selectionColor);
+        }
+        
+        private void DrawSelectionBorder(int left, int top, int right, int bottom, Color color)
+        {
+            // Draw horizontal lines
             for (int x = left; x <= right; x++)
             {
                 if (x >= 0 && x < Width)
                 {
                     if (top >= 0 && top < Height)
-                        _selectionOverlay[x, top] = selectionColor;
+                        _selectionOverlay[x, top] = color;
                     if (bottom >= 0 && bottom < Height)
-                        _selectionOverlay[x, bottom] = selectionColor;
+                        _selectionOverlay[x, bottom] = color;
                 }
             }
-
+        
+            // Draw vertical lines
             for (int y = top; y <= bottom; y++)
             {
                 if (y >= 0 && y < Height)
                 {
                     if (left >= 0 && left < Width)
-                        _selectionOverlay[left, y] = selectionColor;
+                        _selectionOverlay[left, y] = color;
                     if (right >= 0 && right < Width)
-                        _selectionOverlay[right, y] = selectionColor;
+                        _selectionOverlay[right, y] = color;
                 }
             }
         }
 
         public void FinishSelection(int startX, int startY, int endX, int endY)
         {
-            _hasSelection = false;
+            // Don't clear selection, just update the bounds
+            _selectionLeft = Math.Min(startX, endX);
+            _selectionTop = Math.Min(startY, endY);
+            _selectionRight = Math.Max(startX, endX);
+            _selectionBottom = Math.Max(startY, endY);
             
-            // Clear overlay
-            for (int x = 0; x < Width; x++)
+            // If there's no actual area selected (just a point), clear selection
+            if (_selectionLeft == _selectionRight && _selectionTop == _selectionBottom)
             {
-                for (int y = 0; y < Height; y++)
-                {
-                    _selectionOverlay[x, y] = Colors.Transparent;
-                }
+                ClearSelection();
+                return;
             }
+            
+            _hasSelection = true;
+            
+            // Update with current animation frame
+            UpdateSelectionAnimation();
         }
 
         public void FloodFill(int x, int y, Color fillColor)
@@ -186,6 +217,42 @@ namespace PixelEditor
             return bitmap;
         }
 
+        public void UpdateSelectionAnimation()
+        {
+            if (!_hasSelection)
+                return;
+                
+            // Advance animation frame
+            _animationFrame = (_animationFrame + 1) % _selectionColors.Length;
+            
+            // Clear previous frame
+            for (int x = 0; x < Width; x++)
+            {
+                for (int y = 0; y < Height; y++)
+                {
+                    _selectionOverlay[x, y] = Colors.Transparent;
+                }
+            }
+            
+            // Draw the selection border using the current frame's color
+            Color selectionColor = _selectionColors[_animationFrame];
+            DrawSelectionBorder(_selectionLeft, _selectionTop, _selectionRight, _selectionBottom, selectionColor);
+        }
+        
+        public void ClearSelection()
+        {
+            _hasSelection = false;
+            
+            // Clear overlay
+            for (int x = 0; x < Width; x++)
+            {
+                for (int y = 0; y < Height; y++)
+                {
+                    _selectionOverlay[x, y] = Colors.Transparent;
+                }
+            }
+        }
+        
         private Color BlendColors(Color background, Color overlay)
         {
             // Simple alpha blending
