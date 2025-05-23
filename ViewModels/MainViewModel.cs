@@ -23,30 +23,12 @@ namespace PixelEditor.ViewModels
         private string _statusText = "Ready";
         private string _positionText = "Position: 0, 0";
         private string _canvasSizeText = "Size: 32x32";
-        private int _pixelScale = 1;
         private int _magicWandTolerance = 32;
         private int _selectionStartX;
         private int _selectionStartY;
         private int _selectionEndX;
         private int _selectionEndY;
         private bool _hasSelection;
-
-        // Add pixel scale property with validation
-        public int PixelScale
-        {
-            get => _pixelScale;
-            set
-            {
-                // Ensure the value is between 1 and 10
-                int newValue = Math.Clamp(value, 1, 10);
-                if (SetProperty(ref _pixelScale, newValue))
-                {
-                    // Update bitmap when the scale changes
-                    UpdateCanvasBitmap();
-                    StatusText = $"Pixel Scale: {_pixelScale}x";
-                }
-            }
-        }
         
         // Magic wand tolerance property with validation
         public int MagicWandTolerance
@@ -197,9 +179,6 @@ namespace PixelEditor.ViewModels
             UpdatePositionCommand = new RelayCommand(p => OnUpdatePosition(p));
             AddCurrentColorCommand = new RelayCommand(_ => ColorPaletteViewModel.AddColor(PrimaryColor));
             
-            // Initialize scale and tolerance commands
-            IncreaseScaleCommand = new RelayCommand(_ => PixelScale++);
-            DecreaseScaleCommand = new RelayCommand(_ => PixelScale--);
             IncreaseMagicWandToleranceCommand = new RelayCommand(_ => MagicWandTolerance += 8);
             DecreaseMagicWandToleranceCommand = new RelayCommand(_ => MagicWandTolerance -= 8);
             
@@ -330,55 +309,8 @@ namespace PixelEditor.ViewModels
         {
             // Get the bitmap scaled to the current pixel scale
             var originalBitmap = _pixelEditor.GetBitmap();
-            
-            if (PixelScale == 1)
-            {
-                CanvasBitmap = originalBitmap;
-                return;
-            }
-            
-            // Create a new bitmap with the scaled dimensions
-            var scaledBitmap = new WriteableBitmap(
-                new Avalonia.PixelSize(originalBitmap.PixelSize.Width * PixelScale, 
-                                      originalBitmap.PixelSize.Height * PixelScale),
-                new Avalonia.Vector(96, 96),
-                Avalonia.Platform.PixelFormat.Bgra8888);
-            
-            using (var srcCtx = originalBitmap.Lock())
-            using (var destCtx = scaledBitmap.Lock())
-            {
-                unsafe
-                {
-                    var src = (uint*)srcCtx.Address;
-                    var dest = (uint*)destCtx.Address;
-                    
-                    int srcWidth = originalBitmap.PixelSize.Width;
-                    int srcHeight = originalBitmap.PixelSize.Height;
-                    int srcStride = srcCtx.RowBytes / 4;
-                    int destStride = destCtx.RowBytes / 4;
-                    
-                    for (int y = 0; y < srcHeight; y++)
-                    {
-                        for (int x = 0; x < srcWidth; x++)
-                        {
-                            uint pixel = src[y * srcStride + x];
-                            
-                            // Fill a square of size PixelScale with the same color
-                            for (int dy = 0; dy < PixelScale; dy++)
-                            {
-                                for (int dx = 0; dx < PixelScale; dx++)
-                                {
-                                    int destX = x * PixelScale + dx;
-                                    int destY = y * PixelScale + dy;
-                                    dest[destY * destStride + destX] = pixel;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            
-            CanvasBitmap = scaledBitmap;
+    
+            CanvasBitmap = originalBitmap; 
         }
 
         private void UpdateCanvasSizeText()
@@ -403,8 +335,8 @@ namespace PixelEditor.ViewModels
             if (parameter is PixelEventArgs args)
             {
                 // Convert screen coordinates to canvas coordinates based on the pixel scale
-                int canvasX = args.X / PixelScale;
-                int canvasY = args.Y / PixelScale;
+                int canvasX = args.X;
+                int canvasY = args.Y;
                 
                 // Check bounds before operations
                 if (canvasX >= 0 && canvasX < _pixelEditor.Width && canvasY >= 0 && canvasY < _pixelEditor.Height)
@@ -446,8 +378,8 @@ namespace PixelEditor.ViewModels
             if (IsSelectionToolSelected && parameter is PixelEventArgs args)
             {
                 // Convert screen coordinates to canvas coordinates
-                int canvasX = args.X / PixelScale;
-                int canvasY = args.Y / PixelScale;
+                int canvasX = args.X;
+                int canvasY = args.Y;
                 
                 // Store selection start coordinates
                 SelectionStartX = canvasX;
@@ -476,10 +408,10 @@ namespace PixelEditor.ViewModels
             if (IsSelectionToolSelected && parameter is SelectionEventArgs args)
             {
                 // Convert screen coordinates to canvas coordinates based on pixel scale
-                int startX = args.StartX / PixelScale;
-                int startY = args.StartY / PixelScale;
-                int endX = args.EndX / PixelScale;
-                int endY = args.EndY / PixelScale;
+                int startX = args.StartX;
+                int startY = args.StartY;
+                int endX = args.EndX;
+                int endY = args.EndY;
                 
                 // Ensure coordinates are within canvas bounds
                 startX = Math.Clamp(startX, 0, _pixelEditor.Width - 1);
@@ -530,10 +462,10 @@ namespace PixelEditor.ViewModels
             if (IsSelectionToolSelected && parameter is SelectionEventArgs args)
             {
                 // Convert screen coordinates to canvas coordinates based on pixel scale
-                int startX = args.StartX / PixelScale;
-                int startY = args.StartY / PixelScale;
-                int endX = args.EndX / PixelScale;
-                int endY = args.EndY / PixelScale;
+                int startX = args.StartX;
+                int startY = args.StartY;
+                int endX = args.EndX;
+                int endY = args.EndY;
                 
                 // Ensure coordinates are within canvas bounds
                 startX = Math.Clamp(startX, 0, _pixelEditor.Width - 1);
@@ -723,8 +655,8 @@ namespace PixelEditor.ViewModels
             if (IsMagicWandToolSelected && parameter is PixelEventArgs args)
             {
                 // Convert screen coordinates to canvas coordinates
-                int canvasX = args.X / PixelScale;
-                int canvasY = args.Y / PixelScale;
+                int canvasX = args.X;
+                int canvasY = args.Y;
                 
                 // Ensure coordinates are within canvas bounds
                 canvasX = Math.Clamp(canvasX, 0, _pixelEditor.Width - 1);
@@ -814,8 +746,8 @@ namespace PixelEditor.ViewModels
             if (parameter is PixelEventArgs args)
             {
                 // Convert screen coordinates to canvas coordinates
-                int canvasX = args.X / PixelScale;
-                int canvasY = args.Y / PixelScale;
+                int canvasX = args.X;
+                int canvasY = args.Y;
                 
                 // Update position text
                 if (canvasX >= 0 && canvasX < _pixelEditor.Width && canvasY >= 0 && canvasY < _pixelEditor.Height)
