@@ -1,4 +1,4 @@
-<ClassicWindow xmlns="https://github.com/avaloniaui"
+<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -11,159 +11,177 @@
         RenderOptions.TextRenderingMode="SubpixelAntialias"
         RenderOptions.BitmapInterpolationMode="None"
         FontFamily="Segoe UI, SF Pro Display, Noto Sans, Cantarel"
-        TextBlock.LetterSpacing="0.4"
+        TextBlock.LetterSpacing="0"
         FontSize="12"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="PreferSystemChrome"
+        ExtendClientAreaTitleBarHeightHint="25"
+        PointerPressed="OnTitlePointerPressed"
+        PointerReleased="OnTitlePointerReleased"
+        PointerMoved="OnTitlePointerMoved"
+        SystemDecorations="None"
         Title="Pixel Art Editor">
+    <Window.Styles>
+        <Style Selector="CaptionButtons">
+            <Setter Property="Margin" Value="0 0 6 0"></Setter>
+        </Style>
+    </Window.Styles>
     
     <Window.DataContext>
             <vm:MainViewModel  />
-    </Window.DataContext>
-    
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+    </Window.DataContext> 
+    <ClassicBorderDecorator BorderThickness="2" BorderStyle="AltRaised">
         
-        <!-- Menu -->
-        <Menu Grid.Row="0">
-            <MenuItem Header="File">
-                <MenuItem Header="New" Command="{Binding NewCommand}"/>
-                <MenuItem Header="Open" Command="{Binding OpenCommand}"/>
-                <MenuItem Header="Save" Command="{Binding SaveCommand}"/>
-                <Separator/>
-                <MenuItem Header="Exit" Command="{Binding ExitCommand}"/>
-            </MenuItem>
-            <MenuItem Header="Palette">
-                <MenuItem Header="Reset to Default" Command="{Binding ColorPaletteViewModel.LoadDefault16BitColorsCommand}" />
-                <MenuItem Header="Add Current Color" Command="{Binding AddCurrentColorCommand}" />
-            </MenuItem>
-            <MenuItem Header="View">
-                <MenuItem Header="Center Canvas" Click="CenterCanvas_Click" />
-            </MenuItem>
-        </Menu>
-        
-        <Separator Grid.Row="1"></Separator>
-        
-        <!-- Tools -->
-        <WrapPanel Grid.Row="2">
-            <StackPanel Orientation="Horizontal" Margin="5 0">
-                <StackPanel.Styles>
-                    <Style Selector="ToggleButton:checked Grid">
-                        <Setter Property="Margin" Value="1 1 -1 -1"></Setter>
-                    </Style>
-                </StackPanel.Styles>
+        <DockPanel>
+            <Border Margin="2 2 2 0" Background="{Binding IsActive, Converter={x:Static pixelEditor:IsActiveToBgBrushConverter.Instance}, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}" DockPanel.Dock="Top">
+                <Grid >
+                    <DockPanel x:Name="CustomTitleBar" PointerReleased="OnTitlePointerReleased" PointerMoved="OnTitlePointerMoved" PointerPressed="OnTitlePointerPressed" >
+                        <Image VerticalAlignment="Center" Source="/Assets/Bitmap16.png" Height="16" Margin="2 1 2 1"></Image>
+                        <TextBlock IsHitTestVisible="False" VerticalAlignment="Center" Foreground="White" Text="{Binding Title, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"></TextBlock>
+                    </DockPanel>
+                </Grid>
+            </Border>
+            <DockPanel> 
                 
-                <Button Width="22" Height="22" Padding="0" Margin="0 0 5 0">
-                    <Image Source="Assets/Pencil16.png"></Image>
-                </Button>
+                <!-- Menu -->
+                <Menu DockPanel.Dock="Top" Margin="0" Padding="0">
+                        <Menu.Styles>
+                            <Style Selector="MenuItem ClassicBorderDecorator ClassicBorderDecorator">
+                                <Setter Property="Margin" Value="0 1 0 0"></Setter> 
+                            </Style>
+                        </Menu.Styles>
+                    <MenuItem Height="22" Header="File">
+                        <MenuItem Header="New" Command="{Binding NewCommand}"/>
+                        <MenuItem Header="Open" Command="{Binding OpenCommand}"/>
+                        <MenuItem Header="Save" Command="{Binding SaveCommand}"/>
+                        <Separator/>
+                        <MenuItem Header="Exit" Command="{Binding ExitCommand}"/>
+                    </MenuItem>
+                    <MenuItem Height="22" Header="Palette">
+                        <MenuItem Header="Reset to Default" Command="{Binding ColorPaletteViewModel.LoadDefault16BitColorsCommand}" />
+                        <MenuItem Header="Add Current Color" Command="{Binding AddCurrentColorCommand}" />
+                    </MenuItem>
+                    <MenuItem Height="22" Header="View">
+                        <MenuItem Header="Center Canvas" Click="CenterCanvas_Click" />
+                    </MenuItem>
+                </Menu>
                 
+                <Separator DockPanel.Dock="Top" Margin="0 0 0 5"></Separator>
                 
-                
-                <ToggleButton Width="22" Height="22" Padding="0" IsChecked="{Binding IsSelectionToolSelected}" Focusable="False">
-                    <Grid Width="16" Height="16">
-                        <Image Margin="0" Height="16" Source="/Assets/Selection16.png"></Image>
-                    </Grid>
-                </ToggleButton>
-                <ToggleButton Width="22" Height="22" Padding="0" IsChecked="{Binding IsPencilToolSelected}" Focusable="False">
-                    <Grid Width="16" Height="16">
-                        <Image Margin="0" Height="16" Source="/Assets/Pencil16.png"></Image>
-                    </Grid>
-                </ToggleButton>
-                <ToggleButton Width="22" Height="22" Padding="0" IsChecked="{Binding IsFillToolSelected}" Focusable="False">
-                    <Grid Width="16" Height="16">
-                        <Image Margin="0" Height="16" Source="/Assets/Fill16.png"></Image>
-                    </Grid>
-                </ToggleButton>
-                
-                <RadioButton IsVisible="False" Content="Pencil" IsChecked="{Binding IsPencilToolSelected}" Margin="5"/>
-                <RadioButton IsVisible="False" Content="Selection" IsChecked="{Binding IsSelectionToolSelected}" Margin="5"/>
-                <RadioButton IsVisible="False" Content="Fill" IsChecked="{Binding IsFillToolSelected}" Margin="5"/>
-                 
-            </StackPanel>
-        </WrapPanel>
+                <!-- Tools -->
+                <WrapPanel DockPanel.Dock="Top">
+                    <StackPanel Orientation="Horizontal" Margin="5 0">
+                        <StackPanel.Styles>
+                            <Style Selector="ToggleButton:checked Grid">
+                                <Setter Property="Margin" Value="1 1 -1 -1"></Setter>
+                            </Style>
+                        </StackPanel.Styles>
+                        
+                        <Button Width="22" Height="22" Padding="0" Margin="0 0 5 0">
+                            <Image Source="Assets/Pencil16.png"></Image>
+                        </Button>
+                        
+                        
+                        
+                        <ToggleButton Width="22" Height="22" Padding="0" IsChecked="{Binding IsSelectionToolSelected}" Focusable="False">
+                            <Grid Width="16" Height="16">
+                                <Image Margin="0" Height="16" Source="/Assets/Selection16.png"></Image>
+                            </Grid>
+                        </ToggleButton>
+                        <ToggleButton Width="22" Height="22" Padding="0" IsChecked="{Binding IsPencilToolSelected}" Focusable="False">
+                            <Grid Width="16" Height="16">
+                                <Image Margin="0" Height="16" Source="/Assets/Pencil16.png"></Image>
+                            </Grid>
+                        </ToggleButton>
+                        <ToggleButton Width="22" Height="22" Padding="0" IsChecked="{Binding IsFillToolSelected}" Focusable="False">
+                            <Grid Width="16" Height="16">
+                                <Image Margin="0" Height="16" Source="/Assets/Fill16.png"></Image>
+                            </Grid>
+                        </ToggleButton>
+                        
+                        <RadioButton IsVisible="False" Content="Pencil" IsChecked="{Binding IsPencilToolSelected}" Margin="5"/>
+                        <RadioButton IsVisible="False" Content="Selection" IsChecked="{Binding IsSelectionToolSelected}" Margin="5"/>
+                        <RadioButton IsVisible="False" Content="Fill" IsChecked="{Binding IsFillToolSelected}" Margin="5"/>
+                         
+                    </StackPanel>
+                </WrapPanel>
 
-        <!-- Color Palette -->
-        <StackPanel Grid.Row="3" Margin="5">
-            <TextBlock Text="Color Palette:" Margin="0,0,0,5"/>
-            <StackPanel Orientation="Horizontal">
-                <ClassicBorderDecorator BorderStyle="Sunken" BorderThickness="1" Margin="0 0 5 0">
-                    <Grid Width="63" Background="{StaticResource BgBrush}">
-                        <Border Margin="10" HorizontalAlignment="Right" VerticalAlignment="Bottom" 
-                                Background="{Binding SecondaryColor, Converter={StaticResource ColorToBrushConverter}}" 
-                                BorderBrush="Black" Width="24" Height="24" BorderThickness="1" />
-                        <Border Margin="10" HorizontalAlignment="Left" VerticalAlignment="Top" 
-                                Background="{Binding PrimaryColor, Converter={StaticResource ColorToBrushConverter}}" 
-                                BorderBrush="Black" Width="24" Height="24" BorderThickness="1" />
+                
+                <!-- Status Bar -->
+                <ClassicBorderDecorator BorderStyle="ThinPressed" BorderThickness="1" Margin="5 1" DockPanel.Dock="Bottom">
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="3 -2 3 1">
+                        <TextBlock VerticalAlignment="Center" Text="{Binding StatusText}" Margin="0 0 5 0"/>
+                        <TextBlock VerticalAlignment="Center" Text="{Binding PositionText}" Margin="5 0"/>
+                        <TextBlock VerticalAlignment="Center" Text="{Binding CanvasSizeText}" Margin="5 0"/>
+                        <TextBlock VerticalAlignment="Center" Margin="5 0">
+                            Scaled Canvas: <Run Text="{Binding Bounds.Width, ElementName=EditorImage}" />x<Run Text="{Binding Bounds.Height, ElementName=EditorImage}" />
+                        </TextBlock>
+                    </StackPanel>
+                </ClassicBorderDecorator>
+                
+                <!-- Color Palette -->
+                <Grid DockPanel.Dock="Bottom" Margin="5">
+                    <StackPanel Orientation="Horizontal">
+                        <ClassicBorderDecorator BorderStyle="Sunken" BorderThickness="1" Margin="0 0 5 0">
+                            <Grid Width="63" Background="{StaticResource BgBrush}">
+                                <Border Margin="10" HorizontalAlignment="Right" VerticalAlignment="Bottom" 
+                                        Background="{Binding SecondaryColor, Converter={StaticResource ColorToBrushConverter}}" 
+                                        BorderBrush="Black" Width="24" Height="24" BorderThickness="1" />
+                                <Border Margin="10" HorizontalAlignment="Left" VerticalAlignment="Top" 
+                                        Background="{Binding PrimaryColor, Converter={StaticResource ColorToBrushConverter}}" 
+                                        BorderBrush="Black" Width="24" Height="24" BorderThickness="1" />
+                            </Grid>
+                        </ClassicBorderDecorator>
+                        <pixelEditor:ColorPaletteControl DataContext="{Binding ColorPaletteViewModel}" Height="64"/>
+                    </StackPanel>
+                </Grid>
+                
+                <!-- Canvas --> 
+                <ClassicBorderDecorator  
+                          PointerPressed="Canvas_PointerPressed"
+                          PointerMoved="Canvas_PointerMoved"
+                          PointerReleased="Canvas_PointerReleased"
+                          PointerWheelChanged="CanvasContainer_PointerWheelChanged"
+                    Background="Gray" BorderStyle="Sunken" BorderThickness="2" Margin="5 0" >
+                    <Grid x:Name="CanvasContainer" ClipToBounds="True">
+                        <Canvas Name="ImageCanvas" 
+                                PointerWheelChanged="Canvas_PointerWheelChanged"
+                                RenderOptions.EdgeMode="Aliased" 
+                                RenderOptions.BitmapInterpolationMode="None"
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Stretch" >
+                            <Border Background="{StaticResource BgBrush}" 
+                                    Canvas.Left="{Binding (Canvas.Left), ElementName=EditorImage}"
+                                    Canvas.Top="{Binding (Canvas.Top), ElementName=EditorImage}"
+                                    Height="{Binding Bounds.Height, ElementName=EditorImage}"
+                                    Width="{Binding Bounds.Width, ElementName=EditorImage}"></Border>
+                            <Image Name="EditorImage" 
+                                   Source="{Binding CanvasBitmap}"
+                            />
+                            <Canvas Name="SelectionOverlay" 
+                                    PointerWheelChanged="Canvas_PointerWheelChanged"
+                                    IsVisible="{Binding HasSelection}"
+                                    Canvas.Left="{Binding (Canvas.Left), ElementName=EditorImage}"
+                                    Canvas.Top="{Binding (Canvas.Top), ElementName=EditorImage}"
+                                    Width="{Binding Bounds.Width, ElementName=EditorImage}"
+                                    Height="{Binding Bounds.Height, ElementName=EditorImage}">
+                                <Path Name="SelectionPathBlack" 
+                                      StrokeThickness="1" StrokeDashArray="4,4,4,4"
+                                      Stroke="Black" StrokeJoin="Miter"
+                                      IsHitTestVisible="False"/>
+                                <Path Name="SelectionPathWhite"  
+                                      StrokeThickness="1" StrokeJoin="Miter"
+                                      Stroke="White" StrokeDashArray="4,4,4,4"
+                                      IsHitTestVisible="False"/>
+
+
+                            </Canvas>
+                        </Canvas>
                     </Grid>
                 </ClassicBorderDecorator>
-                <pixelEditor:ColorPaletteControl DataContext="{Binding ColorPaletteViewModel}" Height="64"/>
-            </StackPanel>
-        </StackPanel>
-        
-        <!-- Canvas --> 
-        <ClassicBorderDecorator 
-                  PointerPressed="Canvas_PointerPressed"
-                  PointerMoved="Canvas_PointerMoved"
-                  PointerReleased="Canvas_PointerReleased"
-                  PointerWheelChanged="CanvasContainer_PointerWheelChanged"
-            Background="Gray" Grid.Row="4" BorderStyle="Sunken" BorderThickness="2" Margin="5 0" >
-            <Grid x:Name="CanvasContainer" ClipToBounds="True">
-                <Canvas Name="ImageCanvas" 
-                        PointerWheelChanged="Canvas_PointerWheelChanged"
-                        RenderOptions.EdgeMode="Aliased" 
-                        RenderOptions.BitmapInterpolationMode="None"
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Stretch" >
-                    <Border Background="{StaticResource BgBrush}" 
-                            Canvas.Left="{Binding (Canvas.Left), ElementName=EditorImage}"
-                            Canvas.Top="{Binding (Canvas.Top), ElementName=EditorImage}"
-                            Height="{Binding Bounds.Height, ElementName=EditorImage}"
-                            Width="{Binding Bounds.Width, ElementName=EditorImage}"></Border>
-                    <Image Name="EditorImage" 
-                           Source="{Binding CanvasBitmap}"
-                    />
-                    <Canvas Name="SelectionOverlay" 
-                            PointerWheelChanged="Canvas_PointerWheelChanged"
-                            IsVisible="{Binding HasSelection}"
-                            Canvas.Left="{Binding (Canvas.Left), ElementName=EditorImage}"
-                            Canvas.Top="{Binding (Canvas.Top), ElementName=EditorImage}"
-                            Width="{Binding Bounds.Width, ElementName=EditorImage}"
-                            Height="{Binding Bounds.Height, ElementName=EditorImage}">
-                        <Path Name="SelectionPath" 
-                              StrokeThickness="1"
-                              IsVisible="{Binding HasSelection}">
-                            <Path.Stroke>
-                                <VisualBrush TileMode="Tile" SourceRect="0,0,8,8" DestinationRect="0,0,8,8">
-                                    <VisualBrush.Visual>
-                                        <Canvas Width="8" Height="8">
-                                            <Path Data="M 0,0 L 4,0 L 4,4 L 0,4 Z" Fill="White" />
-                                            <Path Data="M 4,4 L 8,4 L 8,8 L 4,8 Z" Fill="White" />
-                                            <Path Data="M 4,0 L 8,0 L 8,4 L 4,4 Z" Fill="Black" />
-                                            <Path Data="M 0,4 L 4,4 L 4,8 L 0,8 Z" Fill="Black" />
-                                        </Canvas>
-                                    </VisualBrush.Visual>
-                                </VisualBrush>
-                            </Path.Stroke>
-                        </Path>
-                    </Canvas>
-                </Canvas>
-            </Grid>
-        </ClassicBorderDecorator>
 
-        
-        <!-- Status Bar -->
-        <StackPanel Grid.Row="5" Orientation="Horizontal" Margin="5 1">
-            <TextBlock VerticalAlignment="Center" Text="{Binding StatusText}" Margin="0 0 5 0"/>
-            <TextBlock VerticalAlignment="Center" Text="{Binding PositionText}" Margin="5 0"/>
-            <TextBlock VerticalAlignment="Center" Text="{Binding CanvasSizeText}" Margin="5 0"/>
-            <TextBlock VerticalAlignment="Center" Margin="5 0">
-                Scaled Canvas: <Run Text="{Binding Bounds.Width, ElementName=EditorImage}" />x<Run Text="{Binding Bounds.Height, ElementName=EditorImage}" />
-            </TextBlock>
-        </StackPanel>
-    </Grid>
-</ClassicWindow>
+                
+            </DockPanel>
+        </DockPanel>
+    </ClassicBorderDecorator>
+</Window>
