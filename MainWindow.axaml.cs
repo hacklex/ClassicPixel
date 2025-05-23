@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
@@ -108,39 +109,42 @@ namespace PixelEditor
                 bool isAltPressed = e.KeyModifiers.HasFlag(KeyModifiers.Alt);
                 _lastMouseDownColor = ViewModel.GetPixelColor(x, y);
         
-                if (ViewModel.IsSelectionToolSelected)
+                switch (ViewModel.SelectedTool)
                 {
-                    ViewModel.SelectionStartCommand.Execute(new PixelEventArgs(x, y, isLeftButton, _lastMouseDownColor, isCtrlPressed, isAltPressed));
-                    _selectionStart = adjustedPoint;
-                    _isSelecting = true;
-                    
-                    // Initialize the selection overlay when starting selection
-                    UpdateSelectionOverlay(EditorImage.Bounds.Width, EditorImage.Bounds.Height);
-                }
-                else if (ViewModel.IsMagicWandToolSelected)
-                {
-                    ViewModel.MagicWandSelectCommand.Execute(new PixelEventArgs(x, y, isLeftButton, _lastMouseDownColor, isCtrlPressed, isAltPressed));
-                    
-                    // Update the selection overlay for magic wand selection
-                    UpdateSelectionOverlay(EditorImage.Bounds.Width, EditorImage.Bounds.Height);
-                }
-                else if (ViewModel.IsColorPickerToolSelected)
-                {
-                    Color pickedColor = ViewModel.GetPixelColor(x, y);
-                    if (isLeftButton)
-                    {
-                        ViewModel.PrimaryColor = pickedColor;
-                        ViewModel.StatusText = $"Primary color set to: {pickedColor}";
-                    }
-                    else
-                    {
-                        ViewModel.SecondaryColor = pickedColor;
-                        ViewModel.StatusText = $"Secondary color set to: {pickedColor}";
-                    }
-                }
-                else
-                {
-                    ViewModel.DrawPixelCommand.Execute(new PixelEventArgs(x, y, isLeftButton, _lastMouseDownColor));
+                    case ToolType.Selection:
+                        ViewModel.SelectionStartCommand.Execute(new PixelEventArgs(x, y, isLeftButton, _lastMouseDownColor, isCtrlPressed, isAltPressed));
+                        _selectionStart = adjustedPoint;
+                        _isSelecting = true;
+                        
+                        // Initialize the selection overlay when starting selection
+                        UpdateSelectionOverlay(EditorImage.Bounds.Width, EditorImage.Bounds.Height);
+                        break;
+                        
+                    case ToolType.MagicWand:
+                        ViewModel.MagicWandSelectCommand.Execute(new PixelEventArgs(x, y, isLeftButton, _lastMouseDownColor, isCtrlPressed, isAltPressed));
+                        
+                        // Update the selection overlay for magic wand selection
+                        UpdateSelectionOverlay(EditorImage.Bounds.Width, EditorImage.Bounds.Height);
+                        break;
+                        
+                    case ToolType.ColorPicker:
+                        Color pickedColor = ViewModel.GetPixelColor(x, y);
+                        if (isLeftButton)
+                        {
+                            ViewModel.PrimaryColor = pickedColor;
+                            ViewModel.StatusText = $"Primary color set to: {pickedColor}";
+                        }
+                        else
+                        {
+                            ViewModel.SecondaryColor = pickedColor;
+                            ViewModel.StatusText = $"Secondary color set to: {pickedColor}";
+                        }
+                        break;
+                        
+                    default:
+                        // Drawing tools (Pencil, Fill, Eraser)
+                        ViewModel.DrawPixelCommand.Execute(new PixelEventArgs(x, y, isLeftButton, _lastMouseDownColor));
+                        break;
                 }
             }
         }
@@ -182,7 +186,7 @@ namespace PixelEditor
                 int x = (int)adjustedPoint.X;
                 int y = (int)adjustedPoint.Y;
                 
-                if (_isSelecting && ViewModel.IsSelectionToolSelected)
+                if (_isSelecting && ViewModel.SelectedTool == ToolType.Selection)
                 {
                     bool isCtrlPressed = e.KeyModifiers.HasFlag(KeyModifiers.Control);
                     bool isAltPressed = e.KeyModifiers.HasFlag(KeyModifiers.Alt);
@@ -222,7 +226,7 @@ namespace PixelEditor
                 e.Handled = true;
             }
             // Handle the end of selection
-            else if (_isSelecting && ViewModel.IsSelectionToolSelected)
+            else if (_isSelecting && ViewModel.SelectedTool == ToolType.Selection)
             {
                 var point = e.GetCurrentPoint(ImageCanvas);
                 Point adjustedPoint = GetImageCoordinates(point.Position);
@@ -576,6 +580,14 @@ namespace PixelEditor
                 ViewModel.PrimaryColor = Colors.Transparent;
             else
                 ViewModel.SecondaryColor = Colors.Transparent;
+        }
+
+        private void ToggleButtonIsCheckedChanged(object? sender, RoutedEventArgs e)
+        {
+            if (sender is not ToggleButton toggleButton || ViewModel is null) return;
+            if (!Enum.TryParse<ToolType>(toggleButton.Tag?.ToString() ?? "", out var toolType)) return;
+            if (toggleButton.IsChecked != true && ViewModel.SelectedTool == toolType)
+                toggleButton.IsChecked = true;
         }
     }
 }

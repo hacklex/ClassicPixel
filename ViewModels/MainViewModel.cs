@@ -15,12 +15,7 @@ namespace PixelEditor.ViewModels
         private WriteableBitmap? _canvasBitmap;
         private Color _primaryColor = Colors.Black;
         private Color _secondaryColor = Colors.White;
-        private bool _isPencilToolSelected = true;
-        private bool _isSelectionToolSelected;
-        private bool _isMagicWandToolSelected;
-        private bool _isFillToolSelected;
-        private bool _isEraserToolSelected;
-        private bool _isColorPickerToolSelected;
+        private ToolType _selectedTool = ToolType.Pencil;
         private string _statusText = "Ready";
         private string _positionText = "Position: 0, 0";
         private string _canvasSizeText = "Size: 32x32";
@@ -70,41 +65,19 @@ namespace PixelEditor.ViewModels
             private set => SetProperty(ref _canvasBitmap, value);
         }
         
-        public bool IsPencilToolSelected 
-        { 
-            get => _isPencilToolSelected; 
-            set => SetProperty(ref _isPencilToolSelected, value); 
+        public ToolType SelectedTool
+        {
+            get => _selectedTool;
+            set => SetProperty(ref _selectedTool, value);
         }
         
-        public bool IsSelectionToolSelected 
-        { 
-            get => _isSelectionToolSelected; 
-            set => SetProperty(ref _isSelectionToolSelected, value); 
-        }
-        
-        public bool IsMagicWandToolSelected 
-        { 
-            get => _isMagicWandToolSelected; 
-            set => SetProperty(ref _isMagicWandToolSelected, value); 
-        }
-        
-        public bool IsFillToolSelected 
-        { 
-            get => _isFillToolSelected; 
-            set => SetProperty(ref _isFillToolSelected, value); 
-        }
-        
-        public bool IsEraserToolSelected 
-        { 
-            get => _isEraserToolSelected; 
-            set => SetProperty(ref _isEraserToolSelected, value); 
-        }
-        
-        public bool IsColorPickerToolSelected 
-        { 
-            get => _isColorPickerToolSelected; 
-            set => SetProperty(ref _isColorPickerToolSelected, value); 
-        }
+        // Convenience properties for backward compatibility and readability in code
+        public bool IsPencilToolSelected => SelectedTool == ToolType.Pencil;
+        public bool IsSelectionToolSelected => SelectedTool == ToolType.Selection;
+        public bool IsMagicWandToolSelected => SelectedTool == ToolType.MagicWand;
+        public bool IsFillToolSelected => SelectedTool == ToolType.Fill;
+        public bool IsEraserToolSelected => SelectedTool == ToolType.Eraser;
+        public bool IsColorPickerToolSelected => SelectedTool == ToolType.ColorPicker;
 
         public bool HasSelection
         {
@@ -794,79 +767,37 @@ namespace PixelEditor.ViewModels
         // Tool cycling methods
         public void CycleSelectionTools()
         {
-            // Cycle between Selection Tool and Magic Wand Tool
-            if (IsSelectionToolSelected)
+            SelectedTool = SelectedTool switch
             {
-                // Switch to Magic Wand
-                // Neither selection tool was active, so default to Selection Tool
-                IsPencilToolSelected = false;
-                IsEraserToolSelected = false;
-                IsFillToolSelected = false;
-                IsColorPickerToolSelected = false;
-                IsSelectionToolSelected = false;
-                IsMagicWandToolSelected = true;
-                StatusText = "Magic Wand Tool [s]";
-            }
-            else
-            {
-                // Neither selection tool was active, so default to Selection Tool
-                IsMagicWandToolSelected = false;
-                IsPencilToolSelected = false;
-                IsEraserToolSelected = false;
-                IsFillToolSelected = false;
-                IsColorPickerToolSelected = false;
-                IsSelectionToolSelected = true;
-                StatusText = "Selection Tool [s]";
-            }
+                ToolType.Selection => ToolType.MagicWand,
+                _ => ToolType.Selection
+            };
+            StatusText = SelectedTool == ToolType.Selection 
+                ? "Rect Selection Tool [s] (hit again to switch to Magic Wand)"
+                : "Magic Wand Tool [s] (hit again to switch to Rect Selection)";
         }
-        
+
         public void CycleDrawingTools()
         {
-            // Cycle between Pencil and Eraser
-            if (IsPencilToolSelected)
+            SelectedTool = SelectedTool switch
             {
-                // Switch to Eraser
-                IsMagicWandToolSelected = false;
-                IsPencilToolSelected = false;
-                IsFillToolSelected = false;
-                IsColorPickerToolSelected = false;
-                IsSelectionToolSelected = false;
-                IsEraserToolSelected = true; 
-                StatusText = "Eraser Tool [b]";
-            }
-            else 
-            {
-                // Switch to Pencil
-                IsMagicWandToolSelected = false;
-                IsFillToolSelected = false;
-                IsColorPickerToolSelected = false;
-                IsSelectionToolSelected = false;
-                IsEraserToolSelected = false; 
-                IsPencilToolSelected = true;
-                StatusText = "Pencil Tool [b]";
-            }
+                ToolType.Pencil => ToolType.Eraser,
+                _ => ToolType.Pencil
+            };
+            StatusText = SelectedTool == ToolType.Pencil 
+                ? "Pencil Tool [p] (hit again to switch to Eraser)"
+                : "Eraser Tool [p] (hit again to switch to Pencil)";
         }
-        
+
         public void SelectFillTool()
         {
-            // Switch to Fill Tool
-            IsSelectionToolSelected = false;
-            IsMagicWandToolSelected = false;
-            IsPencilToolSelected = false;
-            IsEraserToolSelected = false;
-            IsColorPickerToolSelected = false; 
-            IsFillToolSelected = true;
+            SelectedTool = ToolType.Fill;
             StatusText = "Flood Fill [f]";
         }
                     
         public void SelectColorPickerTool()
         {
-            IsSelectionToolSelected = false;
-            IsMagicWandToolSelected = false;
-            IsPencilToolSelected = false;
-            IsFillToolSelected = false;
-            IsEraserToolSelected = false;
-            IsColorPickerToolSelected = true; 
+            SelectedTool = ToolType.ColorPicker; 
             StatusText = "Color Picker [k]";
         }
 

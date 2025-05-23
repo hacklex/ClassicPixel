@@ -28,6 +28,10 @@
         </Style>
     </Window.Styles>
     
+    <Window.Resources>
+        <pixelEditor:ToolTypeConverter x:Key="ToolTypeConverter"/>
+    </Window.Resources>
+    
     <Window.DataContext>
             <vm:MainViewModel  />
     </Window.DataContext> 
@@ -80,11 +84,14 @@
                         <TextBlock VerticalAlignment="Center" Margin="5 0">
                             Scaled Canvas: <Run Text="{Binding Bounds.Width, ElementName=EditorImage}" />x<Run Text="{Binding Bounds.Height, ElementName=EditorImage}" />
                         </TextBlock>
-                        <TextBlock VerticalAlignment="Center" IsVisible="{Binding IsMagicWandToolSelected}" Margin="5 0">
+                        <TextBlock VerticalAlignment="Center" IsVisible="{Binding SelectedTool, Converter={StaticResource ToolTypeConverter}, ConverterParameter=MagicWand}" Margin="5 0">
                             Magic Wand Tolerance: <Run Text="{Binding MagicWandTolerance}" /> (Use +/- to adjust)
                         </TextBlock>
-                        <TextBlock VerticalAlignment="Center" IsVisible="{Binding IsEraserToolSelected}" Margin="5 0">
+                        <TextBlock VerticalAlignment="Center" IsVisible="{Binding SelectedTool, Converter={StaticResource ToolTypeConverter}, ConverterParameter=Eraser}" Margin="5 0">
                             Eraser: Left click to erase, Right click for smart erase (Tolerance: <Run Text="{Binding MagicWandTolerance}" />)
+                        </TextBlock>
+                        <TextBlock VerticalAlignment="Center" IsVisible="{Binding SelectedTool, Converter={StaticResource ToolTypeConverter}, ConverterParameter=ColorPicker}" Margin="5 0">
+                            Color Picker: Left click to set primary color, Right click to set secondary color
                         </TextBlock>
                     </StackPanel>
                 </ClassicBorderDecorator>
@@ -119,47 +126,39 @@
                             <Style Selector="ToggleButton">
                                 <Setter Property="Height" Value="25"></Setter>
                                 <Setter Property="Width" Value="25"></Setter>
-                                
                             </Style>
                         </WrapPanel.Styles>
                           
-                        <ToggleButton Padding="0" IsChecked="{Binding IsSelectionToolSelected}" Focusable="False">
+                        <ToggleButton ToolTip.Tip="Selection [s]" Tag="Selection" IsCheckedChanged="ToggleButtonIsCheckedChanged" Padding="0" IsChecked="{Binding SelectedTool, Converter={StaticResource ToolTypeConverter}, ConverterParameter=Selection}" Focusable="False">
                             <Grid Width="16" Height="16">
                                 <Image Margin="0" Height="16" Source="/Assets/Selection16.png"></Image>
                             </Grid>
                         </ToggleButton>
-                        <ToggleButton Padding="0" IsChecked="{Binding IsMagicWandToolSelected}" Focusable="False">
+                        <ToggleButton ToolTip.Tip="Magic Wand [s,s]" Tag="MagicWand" IsCheckedChanged="ToggleButtonIsCheckedChanged" Padding="0" IsChecked="{Binding SelectedTool, Converter={StaticResource ToolTypeConverter}, ConverterParameter=MagicWand}" Focusable="False">
                             <Grid Width="16" Height="16">
                                 <Image Source="/Assets/MagicWand16.png"></Image>
                             </Grid>
                         </ToggleButton>
-                        <ToggleButton Padding="0" IsChecked="{Binding IsPencilToolSelected}" Focusable="False">
+                        <ToggleButton ToolTip.Tip="Pencil [b]" Tag="Pencil" IsCheckedChanged="ToggleButtonIsCheckedChanged" Padding="0" IsChecked="{Binding SelectedTool, Converter={StaticResource ToolTypeConverter}, ConverterParameter=Pencil}" Focusable="False">
                             <Grid Width="16" Height="16">
                                 <Image Margin="0" Height="16" Source="/Assets/Pencil16.png"></Image>
                             </Grid>
                         </ToggleButton>
-                        <ToggleButton Padding="0" IsChecked="{Binding IsFillToolSelected}" Focusable="False">
-                            <Grid Width="16" Height="16">
-                                <Image Margin="0" Height="16" Source="/Assets/Fill16.png"></Image>
-                            </Grid>
-                        </ToggleButton>
-                        <ToggleButton Padding="0" IsChecked="{Binding IsEraserToolSelected}" Focusable="False">
+                        <ToggleButton ToolTip.Tip="Eraser [b]" Tag="Eraser" IsCheckedChanged="ToggleButtonIsCheckedChanged" Padding="0" IsChecked="{Binding SelectedTool, Converter={StaticResource ToolTypeConverter}, ConverterParameter=Eraser}" Focusable="False">
                             <Grid Width="16" Height="16">
                                 <Image Margin="0" Height="16" Source="/Assets/Eraser16.png"></Image>
                             </Grid>
                         </ToggleButton>
-                        <ToggleButton Padding="0" IsChecked="{Binding IsColorPickerToolSelected}" Focusable="False">
+                        <ToggleButton ToolTip.Tip="Flood Fill [f]" Tag="Fill" IsCheckedChanged="ToggleButtonIsCheckedChanged" Padding="0" IsChecked="{Binding SelectedTool, Converter={StaticResource ToolTypeConverter}, ConverterParameter=Fill}" Focusable="False">
+                            <Grid Width="16" Height="16">
+                                <Image Margin="0" Height="16" Source="/Assets/Fill16.png"></Image>
+                            </Grid>
+                        </ToggleButton>
+                        <ToggleButton ToolTip.Tip="Color Picker [k]" Tag="ColorPicker" IsCheckedChanged="ToggleButtonIsCheckedChanged" Padding="0" IsChecked="{Binding SelectedTool, Converter={StaticResource ToolTypeConverter}, ConverterParameter=ColorPicker}" Focusable="False">
                             <Grid Width="16" Height="16">
                                 <Image Margin="0" Height="16" Source="/Assets/ColorPicker16.png"></Image>
                             </Grid>
-                        </ToggleButton>
-                        
-                        <RadioButton IsVisible="False" Content="Selection" IsChecked="{Binding IsSelectionToolSelected}" Margin="5"/>
-                        <RadioButton IsVisible="False" Content="Magic Wand" IsChecked="{Binding IsMagicWandToolSelected}" Margin="5"/>
-                        <RadioButton IsVisible="False" Content="Pencil" IsChecked="{Binding IsPencilToolSelected}" Margin="5"/>
-                        <RadioButton IsVisible="False" Content="Fill" IsChecked="{Binding IsFillToolSelected}" Margin="5"/>
-                        <RadioButton IsVisible="False" Content="Eraser" IsChecked="{Binding IsEraserToolSelected}" Margin="5"/>
-                        <RadioButton IsVisible="False" Content="Eraser" IsChecked="{Binding IsColorPickerToolSelected}" Margin="5"/>
+                        </ToggleButton> 
                          
                     </WrapPanel>
                 </StackPanel>
