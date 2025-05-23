@@ -66,7 +66,46 @@
                         <MenuItem Header="Center Canvas" Click="CenterCanvas_Click" />
                     </MenuItem>
                 </Menu>
-                 
+            
+                
+                <!-- Status Bar -->
+                <ClassicBorderDecorator BorderStyle="ThinPressed" BorderThickness="1" Margin="1 1" DockPanel.Dock="Bottom">
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="3 -2 3 1">
+                        <TextBlock VerticalAlignment="Center" Text="{Binding StatusText}" Margin="0 0 5 0"/>
+                        <TextBlock VerticalAlignment="Center" Text="{Binding PositionText}" Margin="5 0"/>
+                        <TextBlock VerticalAlignment="Center" Text="{Binding CanvasSizeText}" Margin="5 0"/>
+                        <TextBlock VerticalAlignment="Center" Margin="5 0">
+                            Scaled Canvas: <Run Text="{Binding Bounds.Width, ElementName=EditorImage}" />x<Run Text="{Binding Bounds.Height, ElementName=EditorImage}" />
+                        </TextBlock>
+                        <TextBlock VerticalAlignment="Center" IsVisible="{Binding IsMagicWandToolSelected}" Margin="5 0">
+                            Magic Wand Tolerance: <Run Text="{Binding MagicWandTolerance}" /> (Use +/- to adjust)
+                        </TextBlock>
+                        <TextBlock VerticalAlignment="Center" IsVisible="{Binding IsEraserToolSelected}" Margin="5 0">
+                            Eraser: Left click to erase, Right click for smart erase (Tolerance: <Run Text="{Binding MagicWandTolerance}" />)
+                        </TextBlock>
+                    </StackPanel>
+                </ClassicBorderDecorator>
+
+                <!-- Color Palette -->
+                <Grid DockPanel.Dock="Bottom" Margin="1">
+                    <StackPanel Orientation="Horizontal">
+                        <ClassicBorderDecorator PointerPressed="OnTransparentColorPointerPressed" Background="{StaticResource BgBrush}" VerticalAlignment="Top" Width="32" Height="32" BorderStyle="Sunken" BorderThickness="2" Margin="0">
+                            <Grid>
+                                <ClassicBorderDecorator Margin="2 3" HorizontalAlignment="Right" VerticalAlignment="Bottom"  Background="{StaticResource BgBrush}"
+                                        Width="15" Height="15" BorderThickness="1" BorderStyle="ThinRaised">
+                                    <Border BorderThickness="1" BorderBrush="#c0c0c0" Background="{Binding SecondaryColor, Converter={StaticResource ColorToBrushConverter}}" ></Border>
+                                </ClassicBorderDecorator>
+                                <ClassicBorderDecorator Margin="2 3" HorizontalAlignment="Left" VerticalAlignment="Top"  Background="{StaticResource BgBrush}"
+                                                        BorderStyle="ThinRaised"
+                                                        Width="15" Height="15" BorderThickness="1">
+                                    <Border BorderThickness="1" BorderBrush="#c0c0c0" Background="{Binding PrimaryColor, Converter={StaticResource ColorToBrushConverter}}" ></Border>
+                                </ClassicBorderDecorator>
+                            </Grid>
+                        </ClassicBorderDecorator>
+                        <pixelEditor:ColorPaletteControl DataContext="{Binding ColorPaletteViewModel}" Height="34"/>
+                    </StackPanel>
+                </Grid>
+                
                 <!-- Tools -->
                 <StackPanel Width="55" DockPanel.Dock="Left">
                     <WrapPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 0 1 0">
@@ -116,41 +155,6 @@
                     </WrapPanel>
                 </StackPanel>
 
-                
-                <!-- Status Bar -->
-                <ClassicBorderDecorator BorderStyle="ThinPressed" BorderThickness="1" Margin="5 1" DockPanel.Dock="Bottom">
-                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="3 -2 3 1">
-                        <TextBlock VerticalAlignment="Center" Text="{Binding StatusText}" Margin="0 0 5 0"/>
-                        <TextBlock VerticalAlignment="Center" Text="{Binding PositionText}" Margin="5 0"/>
-                        <TextBlock VerticalAlignment="Center" Text="{Binding CanvasSizeText}" Margin="5 0"/>
-                        <TextBlock VerticalAlignment="Center" Margin="5 0">
-                            Scaled Canvas: <Run Text="{Binding Bounds.Width, ElementName=EditorImage}" />x<Run Text="{Binding Bounds.Height, ElementName=EditorImage}" />
-                        </TextBlock>
-                        <TextBlock VerticalAlignment="Center" IsVisible="{Binding IsMagicWandToolSelected}" Margin="5 0">
-                            Magic Wand Tolerance: <Run Text="{Binding MagicWandTolerance}" /> (Use +/- to adjust)
-                        </TextBlock>
-                        <TextBlock VerticalAlignment="Center" IsVisible="{Binding IsEraserToolSelected}" Margin="5 0">
-                            Eraser: Left click to erase, Right click for smart erase (Tolerance: <Run Text="{Binding MagicWandTolerance}" />)
-                        </TextBlock>
-                    </StackPanel>
-                </ClassicBorderDecorator>
-                
-                <!-- Color Palette -->
-                <Grid DockPanel.Dock="Bottom" Margin="5">
-                    <StackPanel Orientation="Horizontal">
-                        <ClassicBorderDecorator BorderStyle="Sunken" BorderThickness="1" Margin="0 0 5 0">
-                            <Grid Width="63" Background="{StaticResource BgBrush}">
-                                <Border Margin="10" HorizontalAlignment="Right" VerticalAlignment="Bottom" 
-                                        Background="{Binding SecondaryColor, Converter={StaticResource ColorToBrushConverter}}" 
-                                        BorderBrush="Black" Width="24" Height="24" BorderThickness="1" />
-                                <Border Margin="10" HorizontalAlignment="Left" VerticalAlignment="Top" 
-                                        Background="{Binding PrimaryColor, Converter={StaticResource ColorToBrushConverter}}" 
-                                        BorderBrush="Black" Width="24" Height="24" BorderThickness="1" />
-                            </Grid>
-                        </ClassicBorderDecorator>
-                        <pixelEditor:ColorPaletteControl DataContext="{Binding ColorPaletteViewModel}" Height="64"/>
-                    </StackPanel>
-                </Grid>
                 
                 <!-- Canvas --> 
                 <ClassicBorderDecorator  

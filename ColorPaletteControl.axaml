@@ -5,28 +5,31 @@
              xmlns:vm="clr-namespace:PixelEditor.ViewModels"
              xmlns:pixelEditor="clr-namespace:PixelEditor"
              x:DataType="{x:Type vm:ColorPaletteViewModel}"
-             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="100"
+             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="36"
+             d:DataContext="{x:Static vm:ColorPaletteViewModel.Dummy}"
              x:Class="PixelEditor.ColorPaletteControl">
     
-    <ClassicBorderDecorator BorderStyle="Sunken" BorderThickness="2" Padding="2">
-        <ItemsControl ItemsSource="{Binding Colors}">
-            <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <WrapPanel Orientation="Vertical" />
-                </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
-            <ItemsControl.ItemTemplate>
-                <DataTemplate DataType="{x:Type pixelEditor:PaletteColor}">
-                    <Border Margin="2" Background="{StaticResource BgBrush}">
-                        <Border Width="24" Height="24"  
-                                BorderBrush="Black" BorderThickness="1"
-                                Background="{Binding ColorBrush}"
-                                PointerPressed="OnColorPressed">
-                            
+    <Grid>
+        <Border VerticalAlignment="Top" HorizontalAlignment="Left" BorderThickness="0 0 1 1" BorderBrush="Gray">
+            <ItemsControl ItemsSource="{Binding Colors}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Vertical" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type pixelEditor:PaletteColor}">
+                        <Border Margin="0" Padding="0" Background="{StaticResource BgBrush}">
+                            <ClassicBorderDecorator Width="16" Height="16"  
+                                    BorderThickness="2" BorderStyle="Sunken"
+                                    Background="{Binding ColorBrush}"
+                                    PointerPressed="OnColorPressed">
+                                
+                            </ClassicBorderDecorator>
                         </Border>
-                    </Border>
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
-    </ClassicBorderDecorator>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Border>
+    </Grid>
 </UserControl>

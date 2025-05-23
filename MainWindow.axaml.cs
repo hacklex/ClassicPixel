@@ -549,5 +549,15 @@ namespace PixelEditor
                     break;
             }
         }
+
+        private void OnTransparentColorPointerPressed(object? sender, PointerPressedEventArgs e)
+        {
+            if (ViewModel is null) return; 
+            var isLeftButton = e.GetCurrentPoint(sender as Visual).Properties.IsLeftButtonPressed;
+            if (isLeftButton)
+                ViewModel.PrimaryColor = Colors.Transparent;
+            else
+                ViewModel.SecondaryColor = Colors.Transparent;
+        }
     }
 }
