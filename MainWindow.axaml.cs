@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -7,6 +8,7 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using Classic.Avalonia.Theme;
 using PixelEditor.ViewModels;
+using SelectionMode = PixelEditor.ViewModels.SelectionMode;
 
 namespace PixelEditor
 {
@@ -16,6 +18,7 @@ namespace PixelEditor
         private Point _lastPosition;
         private bool _isSelecting = false;
         private Point _selectionStart;
+        private SelectionMode _currentSelectionMode = SelectionMode.Replace;
         private MainViewModel? ViewModel => DataContext as MainViewModel;
         private int ImageWidth => ViewModel?.CanvasBitmap?.PixelSize.Width ?? 1;
         private int ImageHeight => ViewModel?.CanvasBitmap?.PixelSize.Height ?? 1;
@@ -84,9 +87,9 @@ namespace PixelEditor
             if (ViewModel is null) return;
             var point = e.GetCurrentPoint(ImageCanvas);
             
-            // If the middle mouse button is pressed or Alt+Left button, start dragging
+            // If the middle mouse button is pressed or Alt+Left button for canvas dragging
             if (point.Properties.IsMiddleButtonPressed || 
-                (point.Properties.IsLeftButtonPressed && e.KeyModifiers.HasFlag(KeyModifiers.Alt)))
+                (point.Properties.IsLeftButtonPressed && e.KeyModifiers.HasFlag(KeyModifiers.Alt) && !ViewModel.IsSelectionToolSelected))
             {
                 _isDragging = true;
                 _lastPosition = e.GetPosition(CanvasContainer);
@@ -102,10 +105,12 @@ namespace PixelEditor
                 int x = (int)adjustedPoint.X;
                 int y = (int)adjustedPoint.Y;
                 bool isLeftButton = point.Properties.IsLeftButtonPressed;
-
+                bool isCtrlPressed = e.KeyModifiers.HasFlag(KeyModifiers.Control);
+                bool isAltPressed = e.KeyModifiers.HasFlag(KeyModifiers.Alt);
+        
                 if (ViewModel.IsSelectionToolSelected)
                 {
-                    ViewModel.SelectionStartCommand.Execute(new PixelEventArgs(x, y, isLeftButton));
+                    ViewModel.SelectionStartCommand.Execute(new PixelEventArgs(x, y, isLeftButton, isCtrlPressed, isAltPressed));
                     _selectionStart = adjustedPoint;
                     _isSelecting = true;
                     
@@ -157,8 +162,15 @@ namespace PixelEditor
                 
                 if (_isSelecting && ViewModel.IsSelectionToolSelected)
                 {
+                    bool isCtrlPressed = e.KeyModifiers.HasFlag(KeyModifiers.Control);
+                    bool isAltPressed = e.KeyModifiers.HasFlag(KeyModifiers.Alt);
+                    
+                    _currentSelectionMode = SelectionMode.Replace;
+                    if (isCtrlPressed) _currentSelectionMode = SelectionMode.Add;
+                    else if (isAltPressed) _currentSelectionMode = SelectionMode.Subtract;
+                    
                     ViewModel.SelectionUpdateCommand.Execute(new SelectionEventArgs(
-                        (int)_selectionStart.X, (int)_selectionStart.Y, x, y));
+                        (int)_selectionStart.X, (int)_selectionStart.Y, x, y, _currentSelectionMode));
                     
                     // Update the selection overlay whenever selection changes
                     UpdateSelectionOverlay(EditorImage.Bounds.Width, EditorImage.Bounds.Height);
@@ -195,8 +207,15 @@ namespace PixelEditor
                 int x = (int)adjustedPoint.X;
                 int y = (int)adjustedPoint.Y;
                 
+                bool isCtrlPressed = e.KeyModifiers.HasFlag(KeyModifiers.Control);
+                bool isAltPressed = e.KeyModifiers.HasFlag(KeyModifiers.Alt);
+                
+                _currentSelectionMode = SelectionMode.Replace;
+                if (isCtrlPressed) _currentSelectionMode = SelectionMode.Add;
+                else if (isAltPressed) _currentSelectionMode = SelectionMode.Subtract;
+                
                 ViewModel.SelectionEndCommand.Execute(new SelectionEventArgs(
-                    (int)_selectionStart.X, (int)_selectionStart.Y, x, y));
+                    (int)_selectionStart.X, (int)_selectionStart.Y, x, y, _currentSelectionMode));
                 
                 _isSelecting = false;
                 
@@ -283,19 +302,70 @@ namespace PixelEditor
                 }
             }
             
-            // Fill the selection map with the rectangular selection
-            int left = Math.Min(ViewModel.SelectionStartX, ViewModel.SelectionEndX);
-            int top = Math.Min(ViewModel.SelectionStartY, ViewModel.SelectionEndY);
-            int right = Math.Max(ViewModel.SelectionStartX, ViewModel.SelectionEndX);
-            int bottom = Math.Max(ViewModel.SelectionStartY, ViewModel.SelectionEndY);
+            // Ask the ViewModel for all selection regions through a new method
+            var selectionRegions = GetSelectionRegions();
             
-            for (int x = left; x <= right; x++)
+            if (selectionRegions.Count == 0)
             {
-                for (int y = top; y <= bottom; y++)
+                // If there are no regions yet, use the current selection rectangle being dragged
+                int left = Math.Min(ViewModel.SelectionStartX, ViewModel.SelectionEndX);
+                int top = Math.Min(ViewModel.SelectionStartY, ViewModel.SelectionEndY);
+                int right = Math.Max(ViewModel.SelectionStartX, ViewModel.SelectionEndX);
+                int bottom = Math.Max(ViewModel.SelectionStartY, ViewModel.SelectionEndY);
+                
+                for (int x = left; x <= right; x++)
                 {
-                    if (x >= 0 && x < selWidth && y >= 0 && y < selHeight)
+                    for (int y = top; y <= bottom; y++)
                     {
-                        _selectionMap[x, y] = true;
+                        if (x >= 0 && x < selWidth && y >= 0 && y < selHeight)
+                        {
+                            _selectionMap[x, y] = true;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // Fill the selection map with all selection regions
+                foreach (var region in selectionRegions)
+                {
+                    for (int x = region.startX; x <= region.endX; x++)
+                    {
+                        for (int y = region.startY; y <= region.endY; y++)
+                        {
+                            if (x >= 0 && x < selWidth && y >= 0 && y < selHeight)
+                            {
+                                _selectionMap[x, y] = true;
+                            }
+                        }
+                    }
+                }
+                
+                // If we're currently selecting, also include the current selection rectangle
+                if (_isSelecting)
+                {
+                    int left = Math.Min(ViewModel.SelectionStartX, ViewModel.SelectionEndX);
+                    int top = Math.Min(ViewModel.SelectionStartY, ViewModel.SelectionEndY);
+                    int right = Math.Max(ViewModel.SelectionStartX, ViewModel.SelectionEndX);
+                    int bottom = Math.Max(ViewModel.SelectionStartY, ViewModel.SelectionEndY);
+                    
+                    for (int x = left; x <= right; x++)
+                    {
+                        for (int y = top; y <= bottom; y++)
+                        {
+                            if (x >= 0 && x < selWidth && y >= 0 && y < selHeight)
+                            {
+                                // Depending on mode, add or subtract from selection
+                                if (_currentSelectionMode == SelectionMode.Add)
+                                {
+                                    _selectionMap[x, y] = true;
+                                }
+                                else if (_currentSelectionMode == SelectionMode.Subtract)
+                                {
+                                    _selectionMap[x, y] = false;
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -454,6 +524,27 @@ namespace PixelEditor
             var delta = _titlePointerPressLocation - cur;
             this.Position = new PixelPoint( 
                 (int)(this.Position.X - delta.X), (int)(this.Position.Y - delta.Y));
+        }
+        
+        // Helper method to access the selection regions from the ViewModel using reflection
+        // (since we don't want to expose this as a public property)
+        private List<(int startX, int startY, int endX, int endY)> GetSelectionRegions()
+        {
+            if (ViewModel == null) return new List<(int, int, int, int)>();
+            
+            var regionsField = ViewModel.GetType().GetField("_selectionRegions", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                
+            if (regionsField != null)
+            {
+                var regions = regionsField.GetValue(ViewModel) as List<(int, int, int, int)>;
+                if (regions != null)
+                {
+                    return regions;
+                }
+            }
+            
+            return new List<(int, int, int, int)>();
         }
     }
 }

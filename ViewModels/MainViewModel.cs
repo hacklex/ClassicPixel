@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Windows.Input;
 using Avalonia.Controls;
@@ -27,6 +28,7 @@ namespace PixelEditor.ViewModels
         private int _selectionEndX;
         private int _selectionEndY;
         private bool _hasSelection;
+        private List<(int startX, int startY, int endX, int endY)> _selectionRegions = new();
         
         // Add pixel scale property with validation
         public int PixelScale
@@ -414,9 +416,17 @@ namespace PixelEditor.ViewModels
                 SelectionEndX = canvasX;
                 SelectionEndY = canvasY;
                 
+                // If we're starting a new selection and not adding or subtracting,
+                // clear existing selection regions
+                if (!args.IsCtrlPressed && !args.IsAltPressed && _selectionRegions.Count > 0)
+                {
+                    _selectionRegions.Clear();
+                }
+                
                 // We're making a rectangular selection in the UI now
                 HasSelection = false; // Don't show selection until we have an actual area
-                StatusText = "Selection started";
+                StatusText = args.IsCtrlPressed ? "Adding to selection..." : 
+                             args.IsAltPressed ? "Subtracting from selection..." : "Selection started";
             }
         }
 
@@ -443,11 +453,14 @@ namespace PixelEditor.ViewModels
                 SelectionEndY = endY;
                 
                 // Only set HasSelection to true if we have an actual area
-                HasSelection = (startX != endX) || (startY != endY);
+                bool hasCurrentArea = (startX != endX) || (startY != endY);
+                HasSelection = hasCurrentArea || _selectionRegions.Count > 0;
                 
-                if (HasSelection)
+                if (hasCurrentArea)
                 {
-                    StatusText = $"Selection: ({startX},{startY}) to ({endX},{endY})";
+                    string modeText = args.Mode == SelectionMode.Add ? "Adding to" : 
+                                     args.Mode == SelectionMode.Subtract ? "Subtracting from" : "";
+                    StatusText = $"{modeText} Selection: ({startX},{startY}) to ({endX},{endY})";
                 }
                 else
                 {
@@ -461,14 +474,12 @@ namespace PixelEditor.ViewModels
             if (HasSelection)
             {
                 HasSelection = false;
-                // We're not using the animation timer for selection anymore
-                // _selectionAnimationTimer.Stop();
+                // Clear all selection regions
+                _selectionRegions.Clear();
                 
                 // Clear the selection in the model
                 _pixelEditor.ClearSelection();
                 
-                // No need to update bitmap for selection changes
-                // UpdateCanvasBitmap();
                 StatusText = "Selection cleared";
             }
         }
@@ -495,21 +506,94 @@ namespace PixelEditor.ViewModels
                 SelectionEndX = endX;
                 SelectionEndY = endY;
                 
-                // Only set HasSelection to true if there's an actual area selected
-                HasSelection = (startX != endX) || (startY != endY);
+                // Normalize the selection rect (make sure startX <= endX and startY <= endY)
+                int left = Math.Min(startX, endX);
+                int top = Math.Min(startY, endY);
+                int right = Math.Max(startX, endX);
+                int bottom = Math.Max(startY, endY);
                 
-                // Store the selection in the model for future operations
-                if (HasSelection)
+                // Only process if there's an actual area selected
+                bool hasCurrentArea = (left != right) || (top != bottom);
+                
+                if (hasCurrentArea)
                 {
-                    _pixelEditor.FinishSelection(startX, startY, endX, endY);
+                    var newRegion = (left, top, right, bottom);
                     
-                    int width = Math.Abs(endX - startX) + 1;
-                    int height = Math.Abs(endY - startY) + 1;
-                    StatusText = $"Selected area: {width}x{height}";
+                    // Handle different selection modes
+                    switch (args.Mode)
+                    {
+                        case SelectionMode.Replace:
+                            _selectionRegions.Clear();
+                            _selectionRegions.Add(newRegion);
+                            break;
+                            
+                        case SelectionMode.Add:
+                            _selectionRegions.Add(newRegion);
+                            break;
+                            
+                        case SelectionMode.Subtract:
+                            // For subtraction, we need to implement this as multiple selection regions
+                            // This is a simplified implementation that just removes intersecting regions
+                            var regionsToKeep = new List<(int startX, int startY, int endX, int endY)>();
+                            
+                            foreach (var region in _selectionRegions)
+                            {
+                                // If the region doesn't overlap with the subtraction region, keep it
+                                if (region.endX < left || region.startX > right || 
+                                    region.endY < top || region.startY > bottom)
+                                {
+                                    regionsToKeep.Add(region);
+                                }
+                                else
+                                {
+                                    // Split the region into non-overlapping parts
+                                    if (region.startX < left)
+                                    {
+                                        regionsToKeep.Add((region.startX, region.startY, left - 1, region.endY));
+                                    }
+                                    if (region.endX > right)
+                                    {
+                                        regionsToKeep.Add((right + 1, region.startY, region.endX, region.endY));
+                                    }
+                                    if (region.startY < top)
+                                    {
+                                        regionsToKeep.Add((Math.Max(left, region.startX), region.startY,
+                                            Math.Min(right, region.endX), top - 1));
+                                    }
+                                    if (region.endY > bottom)
+                                    {
+                                        regionsToKeep.Add((Math.Max(left, region.startX), bottom + 1,
+                                            Math.Min(right, region.endX), region.endY));
+                                    }
+                                }
+                            }
+                            
+                            _selectionRegions = regionsToKeep;
+                            break;
+                    }
+                    
+                    HasSelection = _selectionRegions.Count > 0;
+                    
+                    if (HasSelection)
+                    {
+                        // For UI, we'll still use the last selection for display purposes
+                        _pixelEditor.FinishSelection(left, top, right, bottom);
+                        
+                        int width = right - left + 1;
+                        int height = bottom - top + 1;
+                        
+                        if (args.Mode == SelectionMode.Add)
+                            StatusText = $"Added selection: {width}x{height}";
+                        else if (args.Mode == SelectionMode.Subtract)
+                            StatusText = $"Subtracted from selection: {width}x{height}";
+                        else
+                            StatusText = $"Selected area: {width}x{height}";
+                    }
                 }
-                else
+                else if (_selectionRegions.Count == 0)
                 {
                     _pixelEditor.ClearSelection();
+                    HasSelection = false;
                     StatusText = "Selection canceled";
                 }
             }
@@ -557,28 +641,41 @@ namespace PixelEditor.ViewModels
         public int X { get; }
         public int Y { get; }
         public bool IsLeftButton { get; }
-
-        public PixelEventArgs(int x, int y, bool isLeftButton)
+        public bool IsCtrlPressed { get; }
+        public bool IsAltPressed { get; }
+    
+        public PixelEventArgs(int x, int y, bool isLeftButton, bool isCtrlPressed = false, bool isAltPressed = false)
         {
             X = x;
             Y = y;
             IsLeftButton = isLeftButton;
+            IsCtrlPressed = isCtrlPressed;
+            IsAltPressed = isAltPressed;
         }
     }
 
+    public enum SelectionMode
+    {
+        Replace,  // Replace the current selection
+        Add,      // Add to the current selection (Ctrl+drag)
+        Subtract  // Subtract from the current selection (Alt+drag)
+    }
+    
     public class SelectionEventArgs
     {
         public int StartX { get; }
         public int StartY { get; }
         public int EndX { get; }
         public int EndY { get; }
-
-        public SelectionEventArgs(int startX, int startY, int endX, int endY)
+        public SelectionMode Mode { get; }
+    
+        public SelectionEventArgs(int startX, int startY, int endX, int endY, SelectionMode mode = SelectionMode.Replace)
         {
             StartX = startX;
             StartY = startY;
             EndX = endX;
             EndY = endY;
+            Mode = mode;
         }
     }
 }
