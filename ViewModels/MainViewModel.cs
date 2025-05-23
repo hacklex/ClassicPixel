@@ -18,11 +18,13 @@ namespace PixelEditor.ViewModels
         private Color _secondaryColor = Colors.White;
         private bool _isPencilToolSelected = true;
         private bool _isSelectionToolSelected;
+        private bool _isMagicWandToolSelected;
         private bool _isFillToolSelected;
         private string _statusText = "Ready";
         private string _positionText = "Position: 0, 0";
         private string _canvasSizeText = "Size: 32x32";
         private int _pixelScale = 1;
+        private int _magicWandTolerance = 32;
         private int _selectionStartX;
         private int _selectionStartY;
         private int _selectionEndX;
@@ -47,9 +49,26 @@ namespace PixelEditor.ViewModels
             }
         }
         
-        // Add commands to increase/decrease scale
+        // Magic wand tolerance property with validation
+        public int MagicWandTolerance
+        {
+            get => _magicWandTolerance;
+            set
+            {
+                // Ensure the value is between 0 and 255
+                int newValue = Math.Clamp(value, 0, 255);
+                if (SetProperty(ref _magicWandTolerance, newValue))
+                {
+                    StatusText = $"Magic Wand Tolerance: {_magicWandTolerance}";
+                }
+            }
+        }
+        
+        // Add commands to increase/decrease scale and tolerance
         public ICommand IncreaseScaleCommand { get; }
         public ICommand DecreaseScaleCommand { get; }
+        public ICommand IncreaseMagicWandToleranceCommand { get; }
+        public ICommand DecreaseMagicWandToleranceCommand { get; }
         
         public Color PrimaryColor
         {
@@ -79,6 +98,12 @@ namespace PixelEditor.ViewModels
         { 
             get => _isSelectionToolSelected; 
             set => SetProperty(ref _isSelectionToolSelected, value); 
+        }
+        
+        public bool IsMagicWandToolSelected 
+        { 
+            get => _isMagicWandToolSelected; 
+            set => SetProperty(ref _isMagicWandToolSelected, value); 
         }
         
         public bool IsFillToolSelected 
@@ -146,6 +171,7 @@ namespace PixelEditor.ViewModels
         public ICommand SelectionStartCommand { get; }
         public ICommand SelectionUpdateCommand { get; }
         public ICommand SelectionEndCommand { get; }
+        public ICommand MagicWandSelectCommand { get; }
         public ICommand UpdatePositionCommand { get; }
 
         public MainViewModel()
@@ -160,12 +186,15 @@ namespace PixelEditor.ViewModels
             SelectionStartCommand = new RelayCommand(p => OnSelectionStart(p));
             SelectionUpdateCommand = new RelayCommand(p => OnSelectionUpdate(p));
             SelectionEndCommand = new RelayCommand(p => OnSelectionEnd(p));
+            MagicWandSelectCommand = new RelayCommand(p => OnMagicWandSelect(p));
             UpdatePositionCommand = new RelayCommand(p => OnUpdatePosition(p));
             AddCurrentColorCommand = new RelayCommand(_ => ColorPaletteViewModel.AddColor(PrimaryColor));
             
-            // Initialize scale commands
+            // Initialize scale and tolerance commands
             IncreaseScaleCommand = new RelayCommand(_ => PixelScale++);
             DecreaseScaleCommand = new RelayCommand(_ => PixelScale--);
+            IncreaseMagicWandToleranceCommand = new RelayCommand(_ => MagicWandTolerance += 8);
+            DecreaseMagicWandToleranceCommand = new RelayCommand(_ => MagicWandTolerance -= 8);
 
             // Initialize selection animation timer
             _selectionAnimationTimer = new Timer(100); // Animation frame every 100ms
@@ -607,6 +636,175 @@ namespace PixelEditor.ViewModels
             // No longer updating PixelEditor selection animation
         }
         
+        /// <summary>
+        /// Converts a set of individual pixels into a minimal set of rectangular regions
+        /// </summary>
+        private List<(int startX, int startY, int endX, int endY)> ConvertPixelsToRectRegions(HashSet<(int x, int y)> pixels, int width, int height)
+        {
+            List<(int startX, int startY, int endX, int endY)> regions = new();
+            
+            if (pixels.Count == 0)
+                return regions;
+                
+            // Create a 2D grid to mark selected pixels
+            bool[,] selected = new bool[width, height];
+            
+            // Mark all selected pixels
+            foreach (var (x, y) in pixels)
+            {
+                if (x >= 0 && x < width && y >= 0 && y < height)
+                {
+                    selected[x, y] = true;
+                }
+            }
+            
+            // Convert the selection grid to rectangular regions
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    // Skip if this pixel is not selected or already processed
+                    if (!selected[x, y]) 
+                        continue;
+                    
+                    // Find the maximum width for this starting point
+                    int maxWidth = 1;
+                    while (x + maxWidth < width && selected[x + maxWidth, y])
+                    {
+                        maxWidth++;
+                    }
+                    
+                    // Find the maximum height for this width
+                    int maxHeight = 1;
+                    bool canExtendDown = true;
+                    
+                    while (y + maxHeight < height && canExtendDown)
+                    {
+                        // Check if we can extend the entire width down
+                        for (int i = 0; i < maxWidth; i++)
+                        {
+                            if (!selected[x + i, y + maxHeight])
+                            {
+                                canExtendDown = false;
+                                break;
+                            }
+                        }
+                        
+                        if (canExtendDown)
+                            maxHeight++;
+                    }
+                    
+                    // Create a region from the found rectangle
+                    regions.Add((x, y, x + maxWidth - 1, y + maxHeight - 1));
+                    
+                    // Mark these pixels as processed
+                    for (int dy = 0; dy < maxHeight; dy++)
+                    {
+                        for (int dx = 0; dx < maxWidth; dx++)
+                        {
+                            selected[x + dx, y + dy] = false;
+                        }
+                    }
+                    
+                    // Skip the processed columns for this row
+                    x += maxWidth - 1;
+                }
+            }
+            
+            return regions;
+        }
+        
+        private void OnMagicWandSelect(object? parameter)
+        {
+            if (IsMagicWandToolSelected && parameter is PixelEventArgs args)
+            {
+                // Convert screen coordinates to canvas coordinates
+                int canvasX = args.X / PixelScale;
+                int canvasY = args.Y / PixelScale;
+                
+                // Ensure coordinates are within canvas bounds
+                canvasX = Math.Clamp(canvasX, 0, _pixelEditor.Width - 1);
+                canvasY = Math.Clamp(canvasY, 0, _pixelEditor.Height - 1);
+                
+                // Get the selected pixels using magic wand with current tolerance
+                var selectedPixels = _pixelEditor.MagicWandSelect(canvasX, canvasY, MagicWandTolerance);
+                
+                if (selectedPixels.Count > 0)
+                {
+                    // Convert pixels to efficient rectangular regions
+                    var newRegions = ConvertPixelsToRectRegions(selectedPixels, _pixelEditor.Width, _pixelEditor.Height);
+                    
+                    // Handle different selection modes
+                    SelectionMode mode = args.IsCtrlPressed ? SelectionMode.Add : 
+                                        args.IsAltPressed ? SelectionMode.Subtract : 
+                                        SelectionMode.Replace;
+                    
+                    if (mode == SelectionMode.Replace && !args.IsCtrlPressed && !args.IsAltPressed)
+                    {
+                        // Clear existing selection regions if replacing
+                        _selectionRegions.Clear();
+                        _selectionRegions.AddRange(newRegions);
+                    }
+                    else if (mode == SelectionMode.Add)
+                    {
+                        // Simply add the new regions to the existing ones
+                        _selectionRegions.AddRange(newRegions);
+                    }
+                    else if (mode == SelectionMode.Subtract)
+                    {
+                        // For subtraction, we need to handle region overlaps
+                        var regionsToKeep = new List<(int startX, int startY, int endX, int endY)>();
+                        
+                        // Create a quick lookup set of all pixels in the new regions
+                        HashSet<(int x, int y)> pixelsToRemove = new HashSet<(int x, int y)>();
+                        foreach (var region in newRegions)
+                        {
+                            for (int y = region.startY; y <= region.endY; y++)
+                            {
+                                for (int x = region.startX; x <= region.endX; x++)
+                                {
+                                    pixelsToRemove.Add((x, y));
+                                }
+                            }
+                        }
+                        
+                        // Process each existing region
+                        foreach (var region in _selectionRegions)
+                        {
+                            // Collect pixels from this region that aren't in the subtraction set
+                            HashSet<(int x, int y)> remainingPixels = new HashSet<(int x, int y)>();
+                            
+                            for (int y = region.startY; y <= region.endY; y++)
+                            {
+                                for (int x = region.startX; x <= region.endX; x++)
+                                {
+                                    if (!pixelsToRemove.Contains((x, y)))
+                                    {
+                                        remainingPixels.Add((x, y));
+                                    }
+                                }
+                            }
+                            
+                            // Convert remaining pixels back to rectangle regions
+                            if (remainingPixels.Count > 0)
+                            {
+                                regionsToKeep.AddRange(ConvertPixelsToRectRegions(
+                                    remainingPixels, _pixelEditor.Width, _pixelEditor.Height));
+                            }
+                        }
+                        
+                        _selectionRegions = regionsToKeep;
+                    }
+                    
+                    HasSelection = _selectionRegions.Count > 0;
+                    
+                    string modeText = mode == SelectionMode.Add ? "Added to" : 
+                                    mode == SelectionMode.Subtract ? "Subtracted from" : "Created";
+                    StatusText = $"{modeText} magic wand selection with {selectedPixels.Count} pixels in {newRegions.Count} region(s)";
+                }
+            }
+        }
+        
         private void OnUpdatePosition(object? parameter)
         {
             if (parameter is PixelEventArgs args)
@@ -630,6 +828,8 @@ namespace PixelEditor.ViewModels
                     StatusText = "Pencil Tool";
                 else if (IsSelectionToolSelected)
                     StatusText = "Selection Tool";
+                else if (IsMagicWandToolSelected)
+                    StatusText = "Magic Wand Tool";
                 else if (IsFillToolSelected)
                     StatusText = "Fill Tool";
             }

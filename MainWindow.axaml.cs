@@ -89,7 +89,8 @@ namespace PixelEditor
             
             // If the middle mouse button is pressed or Alt+Left button for canvas dragging
             if (point.Properties.IsMiddleButtonPressed || 
-                (point.Properties.IsLeftButtonPressed && e.KeyModifiers.HasFlag(KeyModifiers.Alt) && !ViewModel.IsSelectionToolSelected))
+                (point.Properties.IsLeftButtonPressed && e.KeyModifiers.HasFlag(KeyModifiers.Alt) && 
+                 !ViewModel.IsSelectionToolSelected && !ViewModel.IsMagicWandToolSelected))
             {
                 _isDragging = true;
                 _lastPosition = e.GetPosition(CanvasContainer);
@@ -115,6 +116,13 @@ namespace PixelEditor
                     _isSelecting = true;
                     
                     // Initialize the selection overlay when starting selection
+                    UpdateSelectionOverlay(EditorImage.Bounds.Width, EditorImage.Bounds.Height);
+                }
+                else if (ViewModel.IsMagicWandToolSelected)
+                {
+                    ViewModel.MagicWandSelectCommand.Execute(new PixelEventArgs(x, y, isLeftButton, isCtrlPressed, isAltPressed));
+                    
+                    // Update the selection overlay for magic wand selection
                     UpdateSelectionOverlay(EditorImage.Bounds.Width, EditorImage.Bounds.Height);
                 }
                 else

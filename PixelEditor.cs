@@ -178,6 +178,56 @@ namespace PixelEditor
                 pixels.Push(new Point(cx, cy - 1));
             }
         }
+        
+        public HashSet<(int x, int y)> MagicWandSelect(int x, int y, int tolerance = 32)
+        {
+            if (x < 0 || x >= Width || y < 0 || y >= Height)
+                return new HashSet<(int x, int y)>();
+        
+            Color targetColor = _pixels[x, y];
+            HashSet<(int x, int y)> selectedPixels = new HashSet<(int x, int y)>();
+            Stack<(int x, int y)> pixelsToCheck = new Stack<(int x, int y)>();
+            
+            pixelsToCheck.Push((x, y));
+            
+            while (pixelsToCheck.Count > 0)
+            {
+                var (cx, cy) = pixelsToCheck.Pop();
+                
+                if (cx < 0 || cx >= Width || cy < 0 || cy >= Height)
+                    continue;
+                
+                if (selectedPixels.Contains((cx, cy)))
+                    continue;
+                
+                // Check if the color is similar enough to the target color
+                if (IsColorSimilar(_pixels[cx, cy], targetColor, tolerance))
+                {
+                    selectedPixels.Add((cx, cy));
+                    
+                    // Add the 4-connected neighbors to check
+                    pixelsToCheck.Push((cx + 1, cy));
+                    pixelsToCheck.Push((cx - 1, cy));
+                    pixelsToCheck.Push((cx, cy + 1));
+                    pixelsToCheck.Push((cx, cy - 1));
+                }
+            }
+            
+            return selectedPixels;
+        }
+        
+        private bool IsColorSimilar(Color a, Color b, int tolerance)
+        {
+            int rDiff = Math.Abs(a.R - b.R);
+            int gDiff = Math.Abs(a.G - b.G);
+            int bDiff = Math.Abs(a.B - b.B);
+            int aDiff = Math.Abs(a.A - b.A);
+            
+            // Calculate color distance (simple Manhattan distance)
+            int distance = rDiff + gDiff + bDiff + aDiff;
+            
+            return distance <= tolerance;
+        }
 
         public WriteableBitmap GetBitmap()
         {
