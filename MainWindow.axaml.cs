@@ -6,7 +6,6 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
-using Classic.Avalonia.Theme;
 using PixelEditor.ViewModels;
 using SelectionMode = PixelEditor.ViewModels.SelectionMode;
 
@@ -14,35 +13,32 @@ namespace PixelEditor
 {
     public partial class MainWindow : Window
     {
-        private bool _isDragging = false;
-        private Point _lastPosition;
-        private bool _isSelecting = false;
-        private Point _selectionStart;
-        private SelectionMode _currentSelectionMode = SelectionMode.Replace;
         private MainViewModel? ViewModel => DataContext as MainViewModel;
         private int ImageWidth => ViewModel?.CanvasBitmap?.PixelSize.Width ?? 1;
         private int ImageHeight => ViewModel?.CanvasBitmap?.PixelSize.Height ?? 1;
         
-        // Image position and zoom properties
+        private bool _isDragging;
+        private Point _lastPosition;
+        private Color _lastMouseDownColor = Colors.Transparent;
         private Point _lastImagePosition;
         
-        // In MainWindow.axaml.cs, update the fields
-        private int _selectionAnimationOffset = 0;
+        private SelectionMode _currentSelectionMode = SelectionMode.Replace;
         private bool[,]? _selectionMap;
-
-        // Selection animation fields
-        private System.Timers.Timer _selectionAnimationTimer;
+        private bool _isSelecting;
+        private Point _selectionStart;
+        private int _selectionAnimationOffset;
+        private readonly System.Timers.Timer _selectionAnimationTimer;
         
         public MainWindow()
         {
             InitializeComponent();
             
-            // Center image when window is loaded
-            this.Loaded += MainWindow_Loaded;
-            this.SizeChanged += MainWindow_SizeChanged;
+            // Center image when the window is loaded
+            Loaded += MainWindow_Loaded;
+            SizeChanged += MainWindow_SizeChanged;
             
             // Initialize selection animation timer
-            _selectionAnimationTimer = new System.Timers.Timer(100); // Animation frame every 100ms
+            _selectionAnimationTimer = new System.Timers.Timer(100); // Animation frame every 100 ms
             _selectionAnimationTimer.Elapsed += OnSelectionAnimationTick;
             _selectionAnimationTimer.AutoReset = true;
             
@@ -50,27 +46,26 @@ namespace PixelEditor
             // In the constructor, update the initialization
              
             // Update selection overlay when selection properties change
-            this.PropertyChanged += (s, e) => {
-                if (e.Property?.Name == "DataContext" && DataContext is MainViewModel)
-                {
-                    var vm = (MainViewModel)DataContext;
-                    vm.PropertyChanged += (sender, args) => {
-                        if (args.PropertyName == nameof(MainViewModel.HasSelection) ||
-                            args.PropertyName == nameof(MainViewModel.SelectionStartX) ||
-                            args.PropertyName == nameof(MainViewModel.SelectionStartY) ||
-                            args.PropertyName == nameof(MainViewModel.SelectionEndX) ||
-                            args.PropertyName == nameof(MainViewModel.SelectionEndY))
-                        {
-                            UpdateSelectionOverlay(EditorImage.Bounds.Width, EditorImage.Bounds.Height);
-                        }
-                    };
-                }
+            PropertyChanged += (_, e) =>
+            {
+                if (e.Property.Name != "DataContext" || DataContext is not MainViewModel) return;
+                var vm = (MainViewModel)DataContext;
+                vm.PropertyChanged += (_, args) => {
+                    if (args.PropertyName == nameof(MainViewModel.HasSelection) ||
+                        args.PropertyName == nameof(MainViewModel.SelectionStartX) ||
+                        args.PropertyName == nameof(MainViewModel.SelectionStartY) ||
+                        args.PropertyName == nameof(MainViewModel.SelectionEndX) ||
+                        args.PropertyName == nameof(MainViewModel.SelectionEndY))
+                    {
+                        UpdateSelectionOverlay(EditorImage.Bounds.Width, EditorImage.Bounds.Height);
+                    }
+                };
             };
         }
 
-        private void MainWindow_Loaded(object sender, RoutedEventArgs e) => CenterCanvas();
-        private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e) => CenterCanvas();
-        private void CenterCanvas_Click(object sender, RoutedEventArgs e) => CenterCanvas();
+        private void MainWindow_Loaded(object? sender, RoutedEventArgs e) => CenterCanvas();
+        private void MainWindow_SizeChanged(object? sender, SizeChangedEventArgs e) => CenterCanvas();
+        private void CenterCanvas_Click(object? sender, RoutedEventArgs e) => CenterCanvas();
 
         private void CenterCanvas()
         {
@@ -108,10 +103,11 @@ namespace PixelEditor
                 bool isLeftButton = point.Properties.IsLeftButtonPressed;
                 bool isCtrlPressed = e.KeyModifiers.HasFlag(KeyModifiers.Control);
                 bool isAltPressed = e.KeyModifiers.HasFlag(KeyModifiers.Alt);
+                _lastMouseDownColor = ViewModel.GetPixelColor(x, y);
         
                 if (ViewModel.IsSelectionToolSelected)
                 {
-                    ViewModel.SelectionStartCommand.Execute(new PixelEventArgs(x, y, isLeftButton, isCtrlPressed, isAltPressed));
+                    ViewModel.SelectionStartCommand.Execute(new PixelEventArgs(x, y, isLeftButton, _lastMouseDownColor, isCtrlPressed, isAltPressed));
                     _selectionStart = adjustedPoint;
                     _isSelecting = true;
                     
@@ -120,14 +116,14 @@ namespace PixelEditor
                 }
                 else if (ViewModel.IsMagicWandToolSelected)
                 {
-                    ViewModel.MagicWandSelectCommand.Execute(new PixelEventArgs(x, y, isLeftButton, isCtrlPressed, isAltPressed));
+                    ViewModel.MagicWandSelectCommand.Execute(new PixelEventArgs(x, y, isLeftButton, _lastMouseDownColor, isCtrlPressed, isAltPressed));
                     
                     // Update the selection overlay for magic wand selection
                     UpdateSelectionOverlay(EditorImage.Bounds.Width, EditorImage.Bounds.Height);
                 }
                 else
                 {
-                    ViewModel.DrawPixelCommand.Execute(new PixelEventArgs(x, y, isLeftButton));
+                    ViewModel.DrawPixelCommand.Execute(new PixelEventArgs(x, y, isLeftButton, _lastMouseDownColor));
                 }
             }
         }
@@ -143,6 +139,7 @@ namespace PixelEditor
 
         private void Canvas_PointerMoved(object sender, PointerEventArgs e)
         {
+            if (ViewModel is null) return;
             // If dragging the image
             if (_isDragging)
             {
@@ -185,12 +182,12 @@ namespace PixelEditor
                 }
                 else
                 {
-                    ViewModel.UpdatePositionCommand.Execute(new PixelEventArgs(x, y, point.Properties.IsLeftButtonPressed));
+                    ViewModel.UpdatePositionCommand.Execute(new PixelEventArgs(x, y, point.Properties.IsLeftButtonPressed, _lastMouseDownColor));
                     
                     // Draw if buttons are pressed
                     if (point.Properties.IsLeftButtonPressed || point.Properties.IsRightButtonPressed)
                     {
-                        ViewModel.DrawPixelCommand.Execute(new PixelEventArgs(x, y, point.Properties.IsLeftButtonPressed));
+                        ViewModel.DrawPixelCommand.Execute(new PixelEventArgs(x, y, point.Properties.IsLeftButtonPressed, _lastMouseDownColor));
                     }
                 }
             }
@@ -199,7 +196,7 @@ namespace PixelEditor
         private void Canvas_PointerReleased(object sender, PointerReleasedEventArgs e)
         {
             if (ViewModel is null) return;
-            // End dragging if middle button was released or Alt+Left button
+            // End dragging if the middle button was released or Alt+Left button
             if (_isDragging && (e.InitialPressMouseButton == MouseButton.Middle || 
                 (e.InitialPressMouseButton == MouseButton.Left && e.KeyModifiers.HasFlag(KeyModifiers.Alt))))
             {
@@ -230,6 +227,21 @@ namespace PixelEditor
                 // Update the selection overlay after ending selection
                 UpdateSelectionOverlay(EditorImage.Bounds.Width, EditorImage.Bounds.Height);
             }
+            else
+            {
+                // Reset the initial right-click color when the mouse button is released
+                if (e.InitialPressMouseButton == MouseButton.Right)
+                {
+                    var viewModelType = ViewModel.GetType();
+                    var field = viewModelType.GetField("_initialRightClickColor", 
+                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    
+                    if (field != null)
+                    {
+                        field.SetValue(ViewModel, null);
+                    }
+                }
+            }
         }
 
         private void CanvasContainer_PointerWheelChanged(object sender, PointerWheelEventArgs e)
@@ -242,13 +254,10 @@ namespace PixelEditor
                 // Get the current mouse position
                 var mousePosition = e.GetPosition(EditorImage);
                 var positionInCanvas = e.GetPosition(CanvasContainer);
-                // Calculate new scale (zoom in or out)
+                // Calculate the new scale (zoom in or out)
                 double zoomFactor = e.Delta.Y > 0 ? 1.2 : 1 / 1.2;
                 double newPositionX = mousePosition.X * zoomFactor;
                 double newPositionY = mousePosition.Y * zoomFactor;
-
-                var oldLeft = Canvas.GetLeft(EditorImage);
-                var oldTop = Canvas.GetTop(EditorImage);
                 
                 var newLeft = positionInCanvas.X - newPositionX;
                 var newTop = positionInCanvas.Y - newPositionY;
@@ -293,7 +302,7 @@ namespace PixelEditor
             double pixelWidth = canvasWidth / ImageWidth;
             double pixelHeight = canvasHeight / ImageHeight;
             
-            // Create selection map if needed
+            // Create the selection map if needed
             int selWidth = ImageWidth;
             int selHeight = ImageHeight;
             if (_selectionMap == null || _selectionMap.GetLength(0) != selWidth || _selectionMap.GetLength(1) != selHeight)
@@ -363,7 +372,7 @@ namespace PixelEditor
                         {
                             if (x >= 0 && x < selWidth && y >= 0 && y < selHeight)
                             {
-                                // Depending on mode, add or subtract from selection
+                                // Depending on the mode, add or subtract from selection
                                 if (_currentSelectionMode == SelectionMode.Add)
                                 {
                                     _selectionMap[x, y] = true;
@@ -391,64 +400,64 @@ namespace PixelEditor
                 {
                     if (_selectionMap[x, y])
                     {
-                        // Top edge (if above pixel is not selected or is edge)
+                        // Top edge (if the above pixel is not selected or is edge)
                         if (y == 0 || !_selectionMap[x, y-1])
                         {
-                            var figure = new Avalonia.Media.PathFigure
+                            var figure = new PathFigure
                             {
                                 StartPoint = new Point(x * pixelWidth, y * pixelHeight),
                                 IsClosed = false,
                                 Segments = new PathSegments()
                             };
-                            figure.Segments.Add(new Avalonia.Media.LineSegment
+                            figure.Segments.Add(new LineSegment
                             {
                                 Point = new Point((x + 1) * pixelWidth, y * pixelHeight)
                             });
                             pathGeo.Figures.Add(figure);
                         }
                         
-                        // Right edge (if right pixel is not selected or is edge)
+                        // Right edge (if the right pixel is not selected or is edge)
                         if (x == selWidth - 1 || !_selectionMap[x+1, y])
                         {
-                            var figure = new Avalonia.Media.PathFigure
+                            var figure = new PathFigure
                             {
                                 StartPoint = new Point((x + 1) * pixelWidth, y * pixelHeight),
                                 IsClosed = false,
                                 Segments = new PathSegments()
                             };
-                            figure.Segments.Add(new Avalonia.Media.LineSegment
+                            figure.Segments.Add(new LineSegment
                             {
                                 Point = new Point((x + 1) * pixelWidth, (y + 1) * pixelHeight)
                             });
                             pathGeo.Figures.Add(figure);
                         }
                         
-                        // Bottom edge (if below pixel is not selected or is edge)
+                        // Bottom edge (if the below pixel is not selected or is edge)
                         if (y == selHeight - 1 || !_selectionMap[x, y+1])
                         {
-                            var figure = new Avalonia.Media.PathFigure
+                            var figure = new PathFigure
                             {
                                 StartPoint = new Point((x + 1) * pixelWidth, (y + 1) * pixelHeight),
                                 IsClosed = false,
                                 Segments = new PathSegments()
                             };
-                            figure.Segments.Add(new Avalonia.Media.LineSegment
+                            figure.Segments.Add(new LineSegment
                             {
                                 Point = new Point(x * pixelWidth, (y + 1) * pixelHeight)
                             });
                             pathGeo.Figures.Add(figure);
                         }
                         
-                        // Left edge (if left pixel is not selected or is edge)
+                        // Left edge (if the left pixel is not selected or is edge)
                         if (x == 0 || !_selectionMap[x-1, y])
                         {
-                            var figure = new Avalonia.Media.PathFigure
+                            var figure = new PathFigure
                             {
                                 StartPoint = new Point(x * pixelWidth, (y + 1) * pixelHeight),
                                 IsClosed = false,
                                 Segments = new PathSegments()
                             };
-                            figure.Segments.Add(new Avalonia.Media.LineSegment
+                            figure.Segments.Add(new LineSegment
                             {
                                 Point = new Point(x * pixelWidth, y * pixelHeight)
                             });
@@ -462,7 +471,7 @@ namespace PixelEditor
             SelectionPathBlack.Data = pathGeo;
             SelectionPathWhite.Data = pathGeo.Clone();
             
-            // Make sure animation timer is running
+            // Make sure the animation timer is running
             if (!_selectionAnimationTimer.Enabled)
             {
                 _selectionAnimationTimer.Start();
@@ -472,39 +481,17 @@ namespace PixelEditor
         protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
         {
             base.OnPropertyChanged(change);
-            
-            // Update selection overlay when image bounds change
-            if (change.Property == Image.SourceProperty && change.Sender == EditorImage)
-            {
+            if (change.Property == Image.SourceProperty && change.Sender == EditorImage) 
                 UpdateSelectionOverlay(EditorImage.Bounds.Width, EditorImage.Bounds.Height);
-            }
         }
         
-        // Update the animation timer callback
         private void OnSelectionAnimationTick(object? sender, System.Timers.ElapsedEventArgs e)
         {
-            // Dispatch to UI thread since we're modifying UI elements
             Dispatcher.UIThread.Post(() =>
             {
-                // Update the animation offset for the marching ants effect
                 _selectionAnimationOffset = (_selectionAnimationOffset + 1) % 16; 
-                // Update top-right path - animate in one direction
                 SelectionPathBlack.StrokeDashOffset = -_selectionAnimationOffset;
                 SelectionPathWhite.StrokeDashOffset = 4-_selectionAnimationOffset;
-
-
-                // if (SelectionPathTopRight?.Stroke is ImageBrush topRightBrush)
-                // { 
-                //     topRightBrush.DestinationRect = new Avalonia.RelativeRect(
-                //         _selectionAnimationOffset, _selectionAnimationOffset, 16, 16, Avalonia.RelativeUnit.Absolute);
-                // }
-                //
-                // // Update bottom-left path - animate in the opposite direction
-                // if (SelectionPathBottomLeft?.Stroke is ImageBrush bottomLeftBrush)
-                // {
-                //     bottomLeftBrush.DestinationRect = new Avalonia.RelativeRect(
-                //         16-_selectionAnimationOffset, 16-_selectionAnimationOffset, 16, 16, Avalonia.RelativeUnit.Absolute);
-                // }
             });
         }
 
@@ -534,25 +521,6 @@ namespace PixelEditor
                 (int)(this.Position.X - delta.X), (int)(this.Position.Y - delta.Y));
         }
         
-        // Helper method to access the selection regions from the ViewModel using reflection
-        // (since we don't want to expose this as a public property)
-        private List<(int startX, int startY, int endX, int endY)> GetSelectionRegions()
-        {
-            if (ViewModel == null) return new List<(int, int, int, int)>();
-            
-            var regionsField = ViewModel.GetType().GetField("_selectionRegions", 
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                
-            if (regionsField != null)
-            {
-                var regions = regionsField.GetValue(ViewModel) as List<(int, int, int, int)>;
-                if (regions != null)
-                {
-                    return regions;
-                }
-            }
-            
-            return new List<(int, int, int, int)>();
-        }
+        private List<(int startX, int startY, int endX, int endY)> GetSelectionRegions() => ViewModel?.SelectionRegions ?? [];
     }
 }

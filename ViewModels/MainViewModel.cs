@@ -13,13 +13,13 @@ namespace PixelEditor.ViewModels
     {
         private PixelEditor _pixelEditor;
         private WriteableBitmap? _canvasBitmap;
-        private Timer _selectionAnimationTimer;
         private Color _primaryColor = Colors.Black;
         private Color _secondaryColor = Colors.White;
         private bool _isPencilToolSelected = true;
         private bool _isSelectionToolSelected;
         private bool _isMagicWandToolSelected;
         private bool _isFillToolSelected;
+        private bool _isEraserToolSelected;
         private string _statusText = "Ready";
         private string _positionText = "Position: 0, 0";
         private string _canvasSizeText = "Size: 32x32";
@@ -30,8 +30,7 @@ namespace PixelEditor.ViewModels
         private int _selectionEndX;
         private int _selectionEndY;
         private bool _hasSelection;
-        private List<(int startX, int startY, int endX, int endY)> _selectionRegions = new();
-        
+
         // Add pixel scale property with validation
         public int PixelScale
         {
@@ -111,6 +110,12 @@ namespace PixelEditor.ViewModels
             get => _isFillToolSelected; 
             set => SetProperty(ref _isFillToolSelected, value); 
         }
+        
+        public bool IsEraserToolSelected 
+        { 
+            get => _isEraserToolSelected; 
+            set => SetProperty(ref _isEraserToolSelected, value); 
+        }
 
         public bool HasSelection
         {
@@ -160,6 +165,8 @@ namespace PixelEditor.ViewModels
             private set => SetProperty(ref _selectionEndY, value);
         }
         
+        public List<(int startX, int startY, int endX, int endY)> SelectionRegions { get; private set; } = [];
+
         public ColorPaletteViewModel ColorPaletteViewModel { get; } = new();
 
         // Commands
@@ -195,11 +202,6 @@ namespace PixelEditor.ViewModels
             DecreaseScaleCommand = new RelayCommand(_ => PixelScale--);
             IncreaseMagicWandToleranceCommand = new RelayCommand(_ => MagicWandTolerance += 8);
             DecreaseMagicWandToleranceCommand = new RelayCommand(_ => MagicWandTolerance -= 8);
-
-            // Initialize selection animation timer
-            _selectionAnimationTimer = new Timer(100); // Animation frame every 100ms
-            _selectionAnimationTimer.Elapsed += OnSelectionAnimationTick;
-            _selectionAnimationTimer.AutoReset = true;
             
             ColorPaletteViewModel.ColorSelected += OnColorSelected;
             UpdateCanvasBitmap();
@@ -400,29 +402,39 @@ namespace PixelEditor.ViewModels
         {
             if (parameter is PixelEventArgs args)
             {
-                if (IsPencilToolSelected)
+                // Convert screen coordinates to canvas coordinates based on the pixel scale
+                int canvasX = args.X / PixelScale;
+                int canvasY = args.Y / PixelScale;
+                
+                // Check bounds before operations
+                if (canvasX >= 0 && canvasX < _pixelEditor.Width && canvasY >= 0 && canvasY < _pixelEditor.Height)
                 {
-                    // Convert screen coordinates to canvas coordinates based on the pixel scale
-                    int canvasX = args.X / PixelScale;
-                    int canvasY = args.Y / PixelScale;
-                    
-                    // Check bounds before drawing
-                    if (canvasX >= 0 && canvasX < _pixelEditor.Width && canvasY >= 0 && canvasY < _pixelEditor.Height)
+                    if (IsPencilToolSelected)
                     {
                         _pixelEditor.DrawPixel(canvasX, canvasY, args.IsLeftButton ? PrimaryColor : SecondaryColor);
                         UpdateCanvasBitmap();
                     }
-                }
-                else if (IsFillToolSelected)
-                {
-                    // Convert screen coordinates to canvas coordinates based on the pixel scale
-                    int canvasX = args.X / PixelScale;
-                    int canvasY = args.Y / PixelScale;
-                    
-                    // Check bounds before filling
-                    if (canvasX >= 0 && canvasX < _pixelEditor.Width && canvasY >= 0 && canvasY < _pixelEditor.Height)
+                    else if (IsFillToolSelected)
                     {
                         _pixelEditor.FloodFill(canvasX, canvasY, args.IsLeftButton ? PrimaryColor : SecondaryColor);
+                        UpdateCanvasBitmap();
+                    }
+                    else if (IsEraserToolSelected)
+                    {
+                        // Create a transparent color for erasing
+                        var transparentColor = Colors.Transparent;
+                        
+                        if (args.IsLeftButton)
+                        {
+                            // Simple eraser - just make pixels transparent
+                            _pixelEditor.DrawPixel(canvasX, canvasY, Color.FromArgb(0,0,0,0));
+                        }
+                        else
+                        {
+                            // Smart eraser - erase only similar colors using tolerance
+                            if (_pixelEditor.IsColorSimilar(_pixelEditor.GetPixelColor(canvasX, canvasY), args.MouseDownColor, _magicWandTolerance))
+                                _pixelEditor.DrawPixel(canvasX, canvasY, Color.FromArgb(0,0,0,0));
+                        }
                         UpdateCanvasBitmap();
                     }
                 }
@@ -447,9 +459,9 @@ namespace PixelEditor.ViewModels
                 
                 // If we're starting a new selection and not adding or subtracting,
                 // clear existing selection regions
-                if (!args.IsCtrlPressed && !args.IsAltPressed && _selectionRegions.Count > 0)
+                if (!args.IsCtrlPressed && !args.IsAltPressed && SelectionRegions.Count > 0)
                 {
-                    _selectionRegions.Clear();
+                    SelectionRegions.Clear();
                 }
                 
                 // We're making a rectangular selection in the UI now
@@ -483,7 +495,7 @@ namespace PixelEditor.ViewModels
                 
                 // Only set HasSelection to true if we have an actual area
                 bool hasCurrentArea = (startX != endX) || (startY != endY);
-                HasSelection = hasCurrentArea || _selectionRegions.Count > 0;
+                HasSelection = hasCurrentArea || SelectionRegions.Count > 0;
                 
                 if (hasCurrentArea)
                 {
@@ -504,7 +516,7 @@ namespace PixelEditor.ViewModels
             {
                 HasSelection = false;
                 // Clear all selection regions
-                _selectionRegions.Clear();
+                SelectionRegions.Clear();
                 
                 // Clear the selection in the model
                 _pixelEditor.ClearSelection();
@@ -552,12 +564,12 @@ namespace PixelEditor.ViewModels
                     switch (args.Mode)
                     {
                         case SelectionMode.Replace:
-                            _selectionRegions.Clear();
-                            _selectionRegions.Add(newRegion);
+                            SelectionRegions.Clear();
+                            SelectionRegions.Add(newRegion);
                             break;
                             
                         case SelectionMode.Add:
-                            _selectionRegions.Add(newRegion);
+                            SelectionRegions.Add(newRegion);
                             break;
                             
                         case SelectionMode.Subtract:
@@ -565,7 +577,7 @@ namespace PixelEditor.ViewModels
                             // This is a simplified implementation that just removes intersecting regions
                             var regionsToKeep = new List<(int startX, int startY, int endX, int endY)>();
                             
-                            foreach (var region in _selectionRegions)
+                            foreach (var region in SelectionRegions)
                             {
                                 // If the region doesn't overlap with the subtraction region, keep it
                                 if (region.endX < left || region.startX > right || 
@@ -597,11 +609,11 @@ namespace PixelEditor.ViewModels
                                 }
                             }
                             
-                            _selectionRegions = regionsToKeep;
+                            SelectionRegions = regionsToKeep;
                             break;
                     }
                     
-                    HasSelection = _selectionRegions.Count > 0;
+                    HasSelection = SelectionRegions.Count > 0;
                     
                     if (HasSelection)
                     {
@@ -619,21 +631,13 @@ namespace PixelEditor.ViewModels
                             StatusText = $"Selected area: {width}x{height}";
                     }
                 }
-                else if (_selectionRegions.Count == 0)
+                else if (SelectionRegions.Count == 0)
                 {
                     _pixelEditor.ClearSelection();
                     HasSelection = false;
                     StatusText = "Selection canceled";
                 }
             }
-        }
-
-        // This method is no longer needed as we're rendering selection in the UI
-        // Keeping it as a stub in case we need it later for other animations
-        private void OnSelectionAnimationTick(object? sender, ElapsedEventArgs e)
-        {
-            // The selection animation is now handled in the UI
-            // No longer updating PixelEditor selection animation
         }
         
         /// <summary>
@@ -742,13 +746,13 @@ namespace PixelEditor.ViewModels
                     if (mode == SelectionMode.Replace && !args.IsCtrlPressed && !args.IsAltPressed)
                     {
                         // Clear existing selection regions if replacing
-                        _selectionRegions.Clear();
-                        _selectionRegions.AddRange(newRegions);
+                        SelectionRegions.Clear();
+                        SelectionRegions.AddRange(newRegions);
                     }
                     else if (mode == SelectionMode.Add)
                     {
                         // Simply add the new regions to the existing ones
-                        _selectionRegions.AddRange(newRegions);
+                        SelectionRegions.AddRange(newRegions);
                     }
                     else if (mode == SelectionMode.Subtract)
                     {
@@ -769,7 +773,7 @@ namespace PixelEditor.ViewModels
                         }
                         
                         // Process each existing region
-                        foreach (var region in _selectionRegions)
+                        foreach (var region in SelectionRegions)
                         {
                             // Collect pixels from this region that aren't in the subtraction set
                             HashSet<(int x, int y)> remainingPixels = new HashSet<(int x, int y)>();
@@ -793,10 +797,10 @@ namespace PixelEditor.ViewModels
                             }
                         }
                         
-                        _selectionRegions = regionsToKeep;
+                        SelectionRegions = regionsToKeep;
                     }
                     
-                    HasSelection = _selectionRegions.Count > 0;
+                    HasSelection = SelectionRegions.Count > 0;
                     
                     string modeText = mode == SelectionMode.Add ? "Added to" : 
                                     mode == SelectionMode.Subtract ? "Subtracted from" : "Created";
@@ -832,8 +836,12 @@ namespace PixelEditor.ViewModels
                     StatusText = "Magic Wand Tool";
                 else if (IsFillToolSelected)
                     StatusText = "Fill Tool";
+                else if (IsEraserToolSelected)
+                    StatusText = $"Eraser Tool (Tolerance: {MagicWandTolerance})";
             }
         }
+
+        public Color GetPixelColor(int x, int y) => _pixelEditor.GetPixelColor(x, y);
     }
 
     public class PixelEventArgs
@@ -843,14 +851,16 @@ namespace PixelEditor.ViewModels
         public bool IsLeftButton { get; }
         public bool IsCtrlPressed { get; }
         public bool IsAltPressed { get; }
-    
-        public PixelEventArgs(int x, int y, bool isLeftButton, bool isCtrlPressed = false, bool isAltPressed = false)
+        public Color MouseDownColor { get; }
+
+        public PixelEventArgs(int x, int y, bool isLeftButton, Color mouseDownColor, bool isCtrlPressed = false, bool isAltPressed = false)
         {
             X = x;
             Y = y;
             IsLeftButton = isLeftButton;
             IsCtrlPressed = isCtrlPressed;
             IsAltPressed = isAltPressed;
+            MouseDownColor = mouseDownColor;
         }
     }
 

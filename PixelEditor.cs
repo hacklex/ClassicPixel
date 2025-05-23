@@ -179,6 +179,87 @@ namespace PixelEditor
             }
         }
         
+        public void EraseSimilarPixels(int x, int y, int tolerance)
+        {
+            if (x < 0 || x >= Width || y < 0 || y >= Height)
+                return;
+        
+            Color targetColor = _pixels[x, y];
+            Color transparentColor = Color.FromArgb(0, 255, 255, 255);
+            
+            // Don't erase if already transparent
+            if (targetColor.A == 0)
+                return;
+                
+            Stack<Point> pixels = new Stack<Point>();
+            pixels.Push(new Point(x, y));
+        
+            while (pixels.Count > 0)
+            {
+                Point current = pixels.Pop();
+                int cx = (int)current.X;
+                int cy = (int)current.Y;
+        
+                if (cx < 0 || cx >= Width || cy < 0 || cy >= Height)
+                    continue;
+                    
+                // Only erase if color is similar to the target color
+                if (!IsColorSimilar(_pixels[cx, cy], targetColor, tolerance))
+                    continue;
+                    
+                // Don't process already erased pixels
+                if (_pixels[cx, cy].A == 0)
+                    continue;
+        
+                _pixels[cx, cy] = transparentColor;
+        
+                pixels.Push(new Point(cx + 1, cy));
+                pixels.Push(new Point(cx - 1, cy));
+                pixels.Push(new Point(cx, cy + 1));
+                pixels.Push(new Point(cx, cy - 1));
+            }
+        }
+        
+        public void ReplaceSimilarColors(int x, int y, Color replacementColor, int tolerance)
+        {
+            if (x < 0 || x >= Width || y < 0 || y >= Height)
+                return;
+        
+            Color targetColor = _pixels[x, y];
+            
+            // Don't replace if colors are identical
+            if (targetColor.Equals(replacementColor))
+                return;
+                
+            Stack<Point> pixels = new Stack<Point>();
+            pixels.Push(new Point(x, y));
+        
+            while (pixels.Count > 0)
+            {
+                Point current = pixels.Pop();
+                int cx = (int)current.X;
+                int cy = (int)current.Y;
+        
+                if (cx < 0 || cx >= Width || cy < 0 || cy >= Height)
+                    continue;
+                    
+                // Only replace if color is similar to the target color
+                if (!IsColorSimilar(_pixels[cx, cy], targetColor, tolerance))
+                    continue;
+                    
+                // Don't process already replaced pixels
+                if (_pixels[cx, cy].Equals(replacementColor))
+                    continue;
+        
+                _pixels[cx, cy] = replacementColor;
+        
+                pixels.Push(new Point(cx + 1, cy));
+                pixels.Push(new Point(cx - 1, cy));
+                pixels.Push(new Point(cx, cy + 1));
+                pixels.Push(new Point(cx, cy - 1));
+            }
+        }
+        
         public HashSet<(int x, int y)> MagicWandSelect(int x, int y, int tolerance = 32)
         {
             if (x < 0 || x >= Width || y < 0 || y >= Height)
@@ -216,7 +297,16 @@ namespace PixelEditor
             return selectedPixels;
         }
         
-        private bool IsColorSimilar(Color a, Color b, int tolerance)
+        public Color GetPixelColor(int x, int y)
+        {
+            if (x >= 0 && x < Width && y >= 0 && y < Height)
+            {
+                return _pixels[x, y];
+            }
+            return Color.FromArgb(0, 0, 0, 0); // Return transparent black for out of bounds
+        }
+        
+        public bool IsColorSimilar(Color a, Color b, int tolerance)
         {
             int rDiff = Math.Abs(a.R - b.R);
             int gDiff = Math.Abs(a.G - b.G);
@@ -234,8 +324,8 @@ namespace PixelEditor
             var bitmap = new WriteableBitmap(
                 new PixelSize(Width, Height),
                 new Vector(96, 96),
-                Avalonia.Platform.PixelFormat.Bgra8888,
-                Avalonia.Platform.AlphaFormat.Premul);
+                PixelFormat.Bgra8888,
+                AlphaFormat.Unpremul);
 
             using (var fb = bitmap.Lock())
             {
@@ -275,7 +365,7 @@ namespace PixelEditor
             // Advance animation frame
             _animationFrame = (_animationFrame + 1) % _selectionColors.Length;
             
-            // Clear previous frame
+            // Clear the previous frame
             for (int x = 0; x < Width; x++)
             {
                 for (int y = 0; y < Height; y++)

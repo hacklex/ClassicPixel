@@ -101,11 +101,17 @@
                                 <Image Margin="0" Height="16" Source="/Assets/Fill16.png"></Image>
                             </Grid>
                         </ToggleButton>
+                        <ToggleButton Padding="0" IsChecked="{Binding IsEraserToolSelected}" Focusable="False">
+                            <Grid Width="16" Height="16">
+                                <Image Margin="0" Height="16" Source="/Assets/Eraser16.png"></Image>
+                            </Grid>
+                        </ToggleButton>
                         
                         <RadioButton IsVisible="False" Content="Pencil" IsChecked="{Binding IsPencilToolSelected}" Margin="5"/>
                         <RadioButton IsVisible="False" Content="Selection" IsChecked="{Binding IsSelectionToolSelected}" Margin="5"/>
                         <RadioButton IsVisible="False" Content="Magic Wand" IsChecked="{Binding IsMagicWandToolSelected}" Margin="5"/>
                         <RadioButton IsVisible="False" Content="Fill" IsChecked="{Binding IsFillToolSelected}" Margin="5"/>
+                        <RadioButton IsVisible="False" Content="Eraser" IsChecked="{Binding IsEraserToolSelected}" Margin="5"/>
                          
                     </WrapPanel>
                 </StackPanel>
@@ -122,6 +128,9 @@
                         </TextBlock>
                         <TextBlock VerticalAlignment="Center" IsVisible="{Binding IsMagicWandToolSelected}" Margin="5 0">
                             Magic Wand Tolerance: <Run Text="{Binding MagicWandTolerance}" /> (Use +/- to adjust)
+                        </TextBlock>
+                        <TextBlock VerticalAlignment="Center" IsVisible="{Binding IsEraserToolSelected}" Margin="5 0">
+                            Eraser: Left click to erase, Right click for smart erase (Tolerance: <Run Text="{Binding MagicWandTolerance}" />)
                         </TextBlock>
                     </StackPanel>
                 </ClassicBorderDecorator>
