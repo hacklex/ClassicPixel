@@ -8,7 +8,7 @@ namespace PixelEditor.ViewModels
     {
         private Color _selectedColor;
 
-        public ObservableCollection<PaletteColor> Colors { get; } = new ObservableCollection<PaletteColor>();
+        public ObservableCollection<PaletteColor> Colors { get; } = new();
 
         public Color SelectedColor
         {
@@ -18,7 +18,7 @@ namespace PixelEditor.ViewModels
         
         public ICommand RemoveColorCommand { get; }
         public ICommand SelectColorCommand { get; }
-        public ICommand LoadDefault16BitColorsCommand { get; }
+        public ICommand LoadDefaultColorsCommand { get; }
 
         public event ColorChangedEventHandler? ColorSelected;
 
@@ -26,8 +26,8 @@ namespace PixelEditor.ViewModels
         {
             RemoveColorCommand = new RelayCommand(RemoveColor);
             SelectColorCommand = new RelayCommand(SelectColor);
-            LoadDefault16BitColorsCommand = new RelayCommand(_ => LoadDefault16BitColors());
-            LoadDefault16BitColors();
+            LoadDefaultColorsCommand = new RelayCommand(_ => LoadDefaultColors());
+            LoadDefaultColors();
         }
 
         private void SelectColor(object? parameter)
@@ -64,12 +64,12 @@ namespace PixelEditor.ViewModels
             get
             {
                 var x = new ColorPaletteViewModel();
-                x.LoadDefault16BitColors();
+                x.LoadDefaultColors();
                 return x;
             }
         }
 
-        public void LoadDefault16BitColors()
+        public void LoadDefaultColors()
         {
             Colors.Clear();
 
