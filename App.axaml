@@ -6,8 +6,8 @@
         <ClassicTheme />
     </Application.Styles>
     <Application.Resources>
-        <ImageBrush TileMode="Tile" Stretch="None" SourceRect="0 0 6 6" DestinationRect="0 0 6 6" AlignmentX="Left" AlignmentY="Top" x:Key="BgBrush" Source="/Assets/BgPattern.png"></ImageBrush>
-        <ImageBrush TileMode="Tile" Stretch="None" SourceRect="0 0 16 16" DestinationRect="0 0 16 16" AlignmentX="Left" AlignmentY="Top" x:Key="SelectionBrush" Source="/Assets/SelectionBrush.png">
+        <ImageBrush TileMode="Tile" Stretch="Fill" SourceRect="0 0 6 6" DestinationRect="0 0 6 6" AlignmentX="Left" AlignmentY="Top" x:Key="BgBrush" Source="/Assets/BgPattern.png"></ImageBrush>
+        <ImageBrush TileMode="Tile" Stretch="None" AlignmentX="Left" AlignmentY="Top" x:Key="SelectionBrush" Source="/Assets/SelectionBrush.png">
             <ImageBrush.Transform>
                 <TranslateTransform X="0" Y="0"></TranslateTransform>
             </ImageBrush.Transform>

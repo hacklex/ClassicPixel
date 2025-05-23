@@ -65,24 +65,16 @@
                         <MenuItem Header="Center Canvas" Click="CenterCanvas_Click" />
                     </MenuItem>
                 </Menu>
-                
-                <Separator DockPanel.Dock="Top" Margin="0 0 0 5"></Separator>
-                
+                 
                 <!-- Tools -->
-                <WrapPanel DockPanel.Dock="Top">
-                    <StackPanel Orientation="Horizontal" Margin="5 0">
-                        <StackPanel.Styles>
+                <StackPanel Width="50" DockPanel.Dock="Left">
+                    <WrapPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 0 1 0">
+                        <WrapPanel.Styles>
                             <Style Selector="ToggleButton:checked Grid">
                                 <Setter Property="Margin" Value="1 1 -1 -1"></Setter>
                             </Style>
-                        </StackPanel.Styles>
-                        
-                        <Button Width="22" Height="22" Padding="0" Margin="0 0 5 0">
-                            <Image Source="Assets/Pencil16.png"></Image>
-                        </Button>
-                        
-                        
-                        
+                        </WrapPanel.Styles>
+                          
                         <ToggleButton Width="22" Height="22" Padding="0" IsChecked="{Binding IsSelectionToolSelected}" Focusable="False">
                             <Grid Width="16" Height="16">
                                 <Image Margin="0" Height="16" Source="/Assets/Selection16.png"></Image>
@@ -103,8 +95,8 @@
                         <RadioButton IsVisible="False" Content="Selection" IsChecked="{Binding IsSelectionToolSelected}" Margin="5"/>
                         <RadioButton IsVisible="False" Content="Fill" IsChecked="{Binding IsFillToolSelected}" Margin="5"/>
                          
-                    </StackPanel>
-                </WrapPanel>
+                    </WrapPanel>
+                </StackPanel>
 
                 
                 <!-- Status Bar -->
@@ -142,7 +134,7 @@
                           PointerMoved="Canvas_PointerMoved"
                           PointerReleased="Canvas_PointerReleased"
                           PointerWheelChanged="CanvasContainer_PointerWheelChanged"
-                    Background="Gray" BorderStyle="Sunken" BorderThickness="2" Margin="5 0" >
+                    Background="Gray" BorderStyle="Sunken" BorderThickness="2" Margin="0 0" >
                     <Grid x:Name="CanvasContainer" ClipToBounds="True">
                         <Canvas Name="ImageCanvas" 
                                 PointerWheelChanged="Canvas_PointerWheelChanged"
