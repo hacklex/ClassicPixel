@@ -773,6 +773,90 @@ namespace PixelEditor.ViewModels
             }
         }
 
+        // Tool cycling methods
+        public void CycleSelectionTools()
+        {
+            // Cycle between Selection Tool and Magic Wand Tool
+            if (IsSelectionToolSelected)
+            {
+                // Switch to Magic Wand
+                IsSelectionToolSelected = false;
+                IsMagicWandToolSelected = true;
+                IsPencilToolSelected = false;
+                IsEraserToolSelected = false;
+                IsFillToolSelected = false;
+                StatusText = "Magic Wand Tool [s]";
+            }
+            else if (IsMagicWandToolSelected)
+            {
+                // Switch to Selection Tool
+                IsSelectionToolSelected = true;
+                IsMagicWandToolSelected = false;
+                IsPencilToolSelected = false;
+                IsEraserToolSelected = false;
+                IsFillToolSelected = false;
+                StatusText = "Selection Tool [s]";
+            }
+            else
+            {
+                // Neither selection tool was active, so default to Selection Tool
+                IsSelectionToolSelected = true;
+                IsMagicWandToolSelected = false;
+                IsPencilToolSelected = false;
+                IsEraserToolSelected = false;
+                IsFillToolSelected = false;
+                StatusText = "Selection Tool [s]";
+            }
+        }
+        
+        public void CycleDrawingTools()
+        {
+            // Cycle between Pencil and Eraser
+            if (IsPencilToolSelected)
+            {
+                // Switch to Eraser
+                IsPencilToolSelected = false;
+                IsEraserToolSelected = true;
+                IsSelectionToolSelected = false;
+                IsMagicWandToolSelected = false;
+                IsFillToolSelected = false;
+                StatusText = "Eraser Tool [b]";
+            }
+            else if (IsEraserToolSelected)
+            {
+                // Switch to Pencil
+                IsPencilToolSelected = true;
+                IsEraserToolSelected = false;
+                IsSelectionToolSelected = false;
+                IsMagicWandToolSelected = false;
+                IsFillToolSelected = false;
+                StatusText = "Pencil Tool [b]";
+            }
+            else
+            {
+                // Neither drawing tool was active, so default to Pencil
+                IsPencilToolSelected = true;
+                IsEraserToolSelected = false;
+                IsSelectionToolSelected = false;
+                IsMagicWandToolSelected = false;
+                IsFillToolSelected = false;
+                StatusText = "Pencil Tool [b]";
+            }
+        }
+        
+        public void SelectFillTool()
+        {
+            // Switch to Fill Tool
+            IsFillToolSelected = true;
+            IsPencilToolSelected = false;
+            IsEraserToolSelected = false;
+            IsSelectionToolSelected = false;
+            IsMagicWandToolSelected = false;
+            StatusText = "Fill Tool [f]";
+        }
+
+        public void SwapSelectedColors() => (PrimaryColor, SecondaryColor) = (SecondaryColor, PrimaryColor);
+        
         public Color GetPixelColor(int x, int y) => _pixelEditor.GetPixelColor(x, y);
     }
 

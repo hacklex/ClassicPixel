@@ -37,6 +37,9 @@ namespace PixelEditor
             Loaded += MainWindow_Loaded;
             SizeChanged += MainWindow_SizeChanged;
             
+            // Add keyboard event handling
+            KeyDown += MainWindow_KeyDown;
+            
             // Initialize selection animation timer
             _selectionAnimationTimer = new System.Timers.Timer(100); // Animation frame every 100 ms
             _selectionAnimationTimer.Elapsed += OnSelectionAnimationTick;
@@ -522,5 +525,29 @@ namespace PixelEditor
         }
         
         private List<(int startX, int startY, int endX, int endY)> GetSelectionRegions() => ViewModel?.SelectionRegions ?? [];
+        
+        private void MainWindow_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (ViewModel == null) return;
+
+            switch (e.Key)
+            {
+                case Key.S:
+                    ViewModel.CycleSelectionTools();
+                    e.Handled = true;
+                    break;
+                case Key.B:
+                    ViewModel.CycleDrawingTools();
+                    e.Handled = true;
+                    break;
+                case Key.F:
+                    ViewModel.SelectFillTool();
+                    e.Handled = true;
+                    break;
+                case Key.X:
+                    ViewModel.SwapSelectedColors();
+                    break;
+            }
+        }
     }
 }
