@@ -161,6 +161,12 @@
                         </ToggleButton> 
                          
                     </WrapPanel>
+                    
+                    <StackPanel IsVisible="{Binding IsToleranceSetupVisible}" Margin="0 2 0 0">
+                        <TextBlock LetterSpacing="-0.2" Margin="1 0 0 0">Tolerance:</TextBlock>
+                        <NumericUpDown Margin="2 0" Minimum="0" Maximum="765" Value="{Binding MagicWandTolerance}"></NumericUpDown>
+                    </StackPanel>
+                    
                 </StackPanel>
 
                 

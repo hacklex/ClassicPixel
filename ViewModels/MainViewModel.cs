@@ -5,7 +5,6 @@ using System.Windows.Input;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
-using System.Timers;
 
 namespace PixelEditor.ViewModels
 {
@@ -25,6 +24,9 @@ namespace PixelEditor.ViewModels
         private int _selectionEndX;
         private int _selectionEndY;
         private bool _hasSelection;
+
+        private bool ShouldShowToleranceSetup(ToolType currentTool) => currentTool is ToolType.MagicWand or ToolType.Eraser or ToolType.Selection or ToolType.Fill;
+        public bool IsToleranceSetupVisible => ShouldShowToleranceSetup(SelectedTool);
         
         // Magic wand tolerance property with validation
         public int MagicWandTolerance
@@ -40,12 +42,6 @@ namespace PixelEditor.ViewModels
                 }
             }
         }
-        
-        // Add commands to increase/decrease scale and tolerance
-        public ICommand IncreaseScaleCommand { get; }
-        public ICommand DecreaseScaleCommand { get; }
-        public ICommand IncreaseMagicWandToleranceCommand { get; }
-        public ICommand DecreaseMagicWandToleranceCommand { get; }
         
         public Color PrimaryColor
         {
@@ -68,9 +64,15 @@ namespace PixelEditor.ViewModels
         public ToolType SelectedTool
         {
             get => _selectedTool;
-            set => SetProperty(ref _selectedTool, value);
+            set
+            {
+                var oldShouldShowTolerance = ShouldShowToleranceSetup(_selectedTool);
+                SetProperty(ref _selectedTool, value);
+                var newShouldShowTolerance = ShouldShowToleranceSetup(value);
+                if (oldShouldShowTolerance != newShouldShowTolerance) OnPropertyChanged(nameof(IsToleranceSetupVisible));
+            }
         }
-        
+
         // Convenience properties for backward compatibility and readability in code
         public bool IsPencilToolSelected => SelectedTool == ToolType.Pencil;
         public bool IsSelectionToolSelected => SelectedTool == ToolType.Selection;
@@ -159,41 +161,40 @@ namespace PixelEditor.ViewModels
             UpdatePositionCommand = new RelayCommand(OnUpdatePosition);
             AddCurrentColorCommand = new RelayCommand(_ => ColorPaletteViewModel.AddColor(PrimaryColor));
             
-            IncreaseMagicWandToleranceCommand = new RelayCommand(_ => MagicWandTolerance += 8);
-            DecreaseMagicWandToleranceCommand = new RelayCommand(_ => MagicWandTolerance -= 8);
-            
             ColorPaletteViewModel.ColorSelected += OnColorSelected;
             UpdateCanvasBitmap();
         }
  
         public ICommand AddCurrentColorCommand { get; }
 
-        private async void OnExit()
-        {
-            if (Program.MainWindow != null)
-            {
-                Program.MainWindow.Close();
-            }
-        }
+        private void OnExit() => Environment.Exit(0);
 
         private async void OnNew()
         {
-            // Create and show the NewCanvasDialog using Program.MainWindow as owner
-            var dialog = new NewCanvasDialog
+            try
             {
-                WindowStartupLocation = WindowStartupLocation.CenterOwner
-            };
-            
-            if (Program.MainWindow != null)
-            {
-                var result = await dialog.ShowDialog<bool?>(Program.MainWindow);
-                
-                if (result == true)
+                // Create and show the NewCanvasDialog using Program.MainWindow as owner
+                var dialog = new NewCanvasDialog
                 {
-                    int width = dialog.CanvasWidth;
-                    int height = dialog.CanvasHeight;
-                    CreateNewCanvas(width, height);
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                };
+            
+                if (Program.MainWindow != null)
+                {
+                    var result = await dialog.ShowDialog<bool?>(Program.MainWindow);
+                
+                    if (result == true)
+                    {
+                        int width = dialog.CanvasWidth;
+                        int height = dialog.CanvasHeight;
+                        CreateNewCanvas(width, height);
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                // Handle any exceptions that occur during the dialog display
+                StatusText = $"Error creating new canvas: {e.Message}";
             }
         }
 
@@ -344,9 +345,6 @@ namespace PixelEditor.ViewModels
                     }
                     else if (IsEraserToolSelected)
                     {
-                        // Create a transparent color for erasing
-                        var transparentColor = Colors.Transparent;
-                        
                         if (args.IsLeftButton)
                         {
                             // Simple eraser - just make pixels transparent
@@ -750,7 +748,7 @@ namespace PixelEditor.ViewModels
                     PositionText = "Position: Outside canvas";
                 }
                 
-                // Update status text based on active tool
+                // Update status text based on the active tool
                 if (IsPencilToolSelected)
                     StatusText = "Pencil Tool";
                 else if (IsSelectionToolSelected)

@@ -544,7 +544,7 @@ namespace PixelEditor
         
         private List<(int startX, int startY, int endX, int endY)> GetSelectionRegions() => ViewModel?.SelectionRegions ?? [];
         
-        private void MainWindow_KeyDown(object sender, KeyEventArgs e)
+        private void MainWindow_KeyDown(object? sender, KeyEventArgs e)
         {
             if (ViewModel == null) return;
 
