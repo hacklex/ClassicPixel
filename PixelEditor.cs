@@ -12,17 +12,22 @@ namespace PixelEditor
     public class PixelEditor
     {
         private Color[,] _pixels;
+        private Color[,]? _previewLayer;
         private int _animationFrame = 0;
         private int _selectionLeft, _selectionTop, _selectionRight, _selectionBottom;
         
         public int Width { get; private set; }
         public int Height { get; private set; }
-
+        
+        // Indicates whether the preview layer is currently being used
+        public bool HasPreview => _previewLayer != null;
+    
         public PixelEditor(int width, int height)
         {
             Width = width;
             Height = height;
             _pixels = new Color[width, height];
+            _previewLayer = new Color[width, height];
             
             // Initialize with transparent white
             for (int x = 0; x < width; x++)
@@ -31,6 +36,7 @@ namespace PixelEditor
                 {
                     // Use fully transparent pixels by default
                     _pixels[x, y] = Color.FromArgb(0, 255, 255, 255);
+                    _previewLayer[x, y] = Color.FromArgb(0, 255, 255, 255);
                 }
             }
         }
@@ -217,6 +223,53 @@ namespace PixelEditor
             
             return distance <= tolerance;
         }
+        
+        // Update the preview layer to show a brush tip at the specified position
+        public void UpdatePreview(int x, int y, Color color, int brushSize = 1)
+        {
+            // Clear previous preview
+            ClearPreview();
+            
+            // Create a simple circular/square brush preview based on brush size
+            for (int i = -brushSize / 2; i <= brushSize / 2; i++)
+            {
+                for (int j = -brushSize / 2; j <= brushSize / 2; j++)
+                {
+                    int px = x + i;
+                    int py = y + j;
+                    
+                    // Simple circular brush check (for brushSize > 1)
+                    if (brushSize > 1)
+                    {
+                        double distance = Math.Sqrt(i * i + j * j);
+                        if (distance > brushSize / 2.0)
+                            continue;
+                    }
+                    
+                    if (px >= 0 && px < Width && py >= 0 && py < Height)
+                    {
+                        // Use a semi-transparent version of the color for preview
+                        byte alpha = Math.Min((byte)128, color.A);
+                        _previewLayer[px, py] = Color.FromArgb(alpha, color.R, color.G, color.B);
+                    }
+                }
+            }
+        }
+        
+        // Clear the preview layer (set all pixels to transparent)
+        public void ClearPreview()
+        {
+            if (_previewLayer == null)
+                return;
+                
+            for (int x = 0; x < Width; x++)
+            {
+                for (int y = 0; y < Height; y++)
+                {
+                    _previewLayer[x, y] = Color.FromArgb(0, 255, 255, 255);
+                }
+            }
+        }
 
         public WriteableBitmap GetBitmap()
         {
@@ -238,6 +291,16 @@ namespace PixelEditor
                             // Get the base pixel color
                             Color pixelColor = _pixels[x, y];
 
+                            // Apply preview layer if available
+                            if (_previewLayer != null)
+                            {
+                                Color previewColor = _previewLayer[x, y];
+                                if (previewColor.A > 0)
+                                {
+                                    pixelColor = BlendColors(pixelColor, previewColor);
+                                }
+                            }
+        
                             // Convert to BGRA format
                             uint color = (uint)((pixelColor.A << 24) | (pixelColor.R << 16) | (pixelColor.G << 8) | pixelColor.B);
                             ptr[y * fb.RowBytes / 4 + x] = color;

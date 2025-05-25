@@ -160,6 +160,9 @@ namespace PixelEditor
 
         private void Canvas_PointerMoved(object sender, PointerEventArgs e)
         {
+            bool isLeftMouseDown = e.GetCurrentPoint(ImageCanvas).Properties.IsLeftButtonPressed;
+            bool isRightMouseDown = e.GetCurrentPoint(ImageCanvas).Properties.IsRightButtonPressed;
+            
             if (ViewModel is null) return;
             // If dragging the image
             if (_isDragging)
@@ -210,6 +213,18 @@ namespace PixelEditor
                     {
                         ViewModel.DrawPixelCommand.Execute(new PixelEventArgs(x, y, point.Properties.IsLeftButtonPressed, _lastMouseDownColor));
                     }
+                 
+                    // Update the position display
+                    ViewModel.UpdatePositionCommand.Execute(new PixelEventArgs(x, y, isLeftMouseDown, _lastMouseDownColor));
+
+                    // Only show preview when no mouse buttons are pressed
+                    if (!isLeftMouseDown && !isRightMouseDown)
+                    {
+                        // Update the brush preview
+                        ViewModel.PreviewBrushCommand.Execute(new PixelEventArgs(x, y, isLeftMouseDown, _lastMouseDownColor));
+                    }
+                    else ViewModel.ClearPreview();
+
                 }
             }
         }
@@ -404,7 +419,7 @@ namespace PixelEditor
                                 }
                             }
                         }
-                    }
+                    } 
                 }
             }
             

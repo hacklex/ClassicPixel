@@ -68,7 +68,8 @@ namespace PixelEditor.ViewModels
         public ICommand SelectionEndCommand { get; }
         public ICommand MagicWandSelectCommand { get; }
         public ICommand UpdatePositionCommand { get; }
-
+        public ICommand PreviewBrushCommand { get; }
+        
         public MainViewModel()
         {
             _pixelEditor = new PixelEditor(32, 32);
@@ -83,6 +84,7 @@ namespace PixelEditor.ViewModels
             SelectionEndCommand = new RelayCommand(OnSelectionEnd);
             MagicWandSelectCommand = new RelayCommand(OnMagicWandSelect);
             UpdatePositionCommand = new RelayCommand(OnUpdatePosition);
+            PreviewBrushCommand = new RelayCommand(OnPreviewBrush);
             AddCurrentColorCommand = new RelayCommand(_ => ColorPaletteViewModel.AddColor(PrimaryColor));
             ColorPaletteViewModel.ColorSelected += OnColorSelected;
             UpdateCanvasBitmap();
@@ -189,6 +191,47 @@ namespace PixelEditor.ViewModels
                 }
             }
         }
+                        
+        private void OnPreviewBrush(object? parameter)
+        {
+            if (parameter is PixelEventArgs args)
+            {
+                int x = args.X;
+                int y = args.Y;
+                
+                // Only show preview in drawing tools
+                if (IsPencilToolSelected || IsEraserToolSelected)
+                {
+                    // Choose appropriate color based on tool and mouse button
+                    Color previewColor;
+                    
+                    if (IsEraserToolSelected)
+                    {
+                        // For eraser, use a semi-transparent white color to indicate erasure
+                        previewColor = Color.FromArgb(128, 255, 255, 255);
+                    }
+                    else
+                    {
+                        // For pencil, use the primary or secondary color based on which mouse button will be used
+                        previewColor = PrimaryColor;
+                    }
+                    
+                    // Default brush size is 1 for now, can be extended later for different brush sizes
+                    int brushSize = 1;
+                    
+                    // Update the preview
+                    _pixelEditor.UpdatePreview(x, y, previewColor, brushSize);
+                }
+                else
+                {
+                    // Clear preview for non-drawing tools
+                    _pixelEditor.ClearPreview();
+                }
+                
+                // Update the canvas to show the preview
+                UpdateCanvasBitmap();
+            }
+        }
 
         public void CreateNewCanvas(int width, int height)
         {
@@ -209,6 +252,8 @@ namespace PixelEditor.ViewModels
             _pixelEditor.SaveToStream(stream);
         }
 
+        public void ClearPreview() => _pixelEditor.ClearPreview();
+        
         private void UpdateCanvasBitmap()
         {
             // Get the bitmap scaled to the current pixel scale
