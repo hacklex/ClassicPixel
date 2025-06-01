@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Chrome;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -536,6 +537,12 @@ namespace PixelEditor
 
         private void OnTitlePointerPressed(object? sender, PointerPressedEventArgs e)
         {
+            if (e.ClickCount == 2 && e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+            {
+                WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+                return;
+            }
+            if(WindowState == WindowState.Maximized) return;
             var posRelativeToTitle = e.GetPosition(CustomTitleBar);
             if (posRelativeToTitle.X < 0 || posRelativeToTitle.Y < 0) return;
             if (posRelativeToTitle.X >= CustomTitleBar.Bounds.Width || posRelativeToTitle.Y >= CustomTitleBar.Bounds.Height) return;
@@ -606,6 +613,12 @@ namespace PixelEditor
             if (!Enum.TryParse<ToolType>(toggleButton.Tag?.ToString() ?? "", out var toolType)) return;
             if (toggleButton.IsChecked != true && ViewModel.SelectedTool == toolType)
                 toggleButton.IsChecked = true;
+        }
+
+        private void OnMacCaptionButtonsLoaded(object? sender, RoutedEventArgs e)
+        {
+            if (sender is not CaptionButtons captionButtons) return;
+            captionButtons.Attach(this);
         }
     }
 }

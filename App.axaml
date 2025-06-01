@@ -1,12 +1,20 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:pixelEditor="clr-namespace:PixelEditor"
+             xmlns:pixelEditor="clr-namespace:PixelEditor" Name="ClassicPixel"
              x:Class="PixelEditor.App">
     <Application.Styles>
         <ClassicTheme />
     </Application.Styles>
+    
+    <NativeMenu.Menu>
+        <NativeMenu>
+            <NativeMenuItem Header="About Classic Pixel…" Click="AppAbout_OnClick" />
+        </NativeMenu>
+    </NativeMenu.Menu> 
     <Application.Resources>
-        <ImageBrush TileMode="Tile" Stretch="Fill" SourceRect="0 0 6 6" DestinationRect="0 0 6 6" AlignmentX="Left" AlignmentY="Top" x:Key="BgBrush" Source="/Assets/BgPattern.png"></ImageBrush>
+       
+        <ImageBrush TileMode="Tile" Stretch="Fill" SourceRect="{OnPlatform Default='0 0 6 6', macOS='0 0 3 3'}" DestinationRect="0 0 6 6" AlignmentX="Left" AlignmentY="Top" x:Key="BgBrush" Source="/Assets/BgPattern.png"></ImageBrush>
+
         <ImageBrush TileMode="Tile" Stretch="None" AlignmentX="Left" AlignmentY="Top" x:Key="SelectionBrush" Source="/Assets/SelectionBrush.png">
             <ImageBrush.Transform>
                 <TranslateTransform X="0" Y="0"></TranslateTransform>

@@ -19,12 +19,14 @@
         PointerPressed="OnTitlePointerPressed"
         PointerReleased="OnTitlePointerReleased"
         PointerMoved="OnTitlePointerMoved"
-        SystemDecorations="BorderOnly"
-        
+        SystemDecorations="{OnPlatform Default='BorderOnly', macOS='None'}"
         Title="Pixel Art Editor">
     <Window.Styles>
         <Style Selector="CaptionButtons">
             <Setter Property="Margin" Value="0 0 6 0"></Setter>
+        </Style>
+        <Style Selector="TextBlock">
+            <Setter Property="Margin" Value="0 2 0 -1"></Setter>
         </Style>
     </Window.Styles>
     
@@ -42,6 +44,11 @@
                 <Grid >
                     <DockPanel x:Name="CustomTitleBar" PointerReleased="OnTitlePointerReleased" PointerMoved="OnTitlePointerMoved" PointerPressed="OnTitlePointerPressed" >
                         <Image VerticalAlignment="Center" Source="/Assets/Bitmap16.png" Height="16" Margin="2 1 2 1"></Image>
+                        <OnPlatform>
+                            <OnPlatform.macOS>
+                                <CaptionButtons Loaded="OnMacCaptionButtonsLoaded" DockPanel.Dock="Right" Margin="0 0 1 0" />
+                            </OnPlatform.macOS>
+                        </OnPlatform>
                         <TextBlock IsHitTestVisible="False" VerticalAlignment="Center" Foreground="White" Text="{Binding Title, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"></TextBlock>
                     </DockPanel>
                 </Grid>
@@ -52,10 +59,35 @@
                 <Menu DockPanel.Dock="Top" Margin="0" Padding="0">
                         <Menu.Styles>
                             <Style Selector="MenuItem ClassicBorderDecorator ClassicBorderDecorator">
-                                <Setter Property="Margin" Value="0 1 0 0"></Setter> 
+                                <OnPlatform>
+                                    <OnPlatform.macOS>
+                                    </OnPlatform.macOS>
+                                    <OnPlatform.Default>
+                                        <Setter Property="Margin" Value="0 1 0 0"></Setter> 
+                                    </OnPlatform.Default>
+                                </OnPlatform>
                             </Style>
                             <Style Selector="MenuItem MenuItem">
-                                <Setter Property="Padding" Value="0 0 0 1"></Setter> 
+                                <OnPlatform>
+                                    <OnPlatform.macOS>
+                                        <Setter Property="Padding" Value="0 1 0 -1"></Setter> 
+                                    </OnPlatform.macOS>
+                                    <OnPlatform.Default>
+                                        <Setter Property="Padding" Value="0 0 0 1"></Setter> 
+                                    </OnPlatform.Default>
+                                </OnPlatform>
+                            </Style>
+                            <Style Selector="MenuItem">
+                                <OnPlatform>
+                                    <OnPlatform.macOS>
+                                        <Setter Property="Padding" Value="5 "></Setter> 
+                                    </OnPlatform.macOS> 
+                                </OnPlatform>
+                                <OnPlatform>
+                                    <OnPlatform.macOS>
+                                        <Setter Property="ClipToBounds" Value="False"></Setter> 
+                                    </OnPlatform.macOS> 
+                                </OnPlatform>
                             </Style>
                         </Menu.Styles>
                     <MenuItem Height="22" Header="File">
@@ -77,7 +109,7 @@
                 
                 <!-- Status Bar -->
                 <ClassicBorderDecorator BorderStyle="ThinPressed" BorderThickness="1" Margin="1 1" DockPanel.Dock="Bottom">
-                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="3 -2 3 1">
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="{OnPlatform '3, -2, 3, 1', macOS='3, 2, 3, 1.5', x:TypeArguments=Thickness}">
                         <TextBlock VerticalAlignment="Center" Text="{Binding StatusText}" Margin="0 0 5 0"/>
                         <TextBlock VerticalAlignment="Center" Text="{Binding PositionText}" Margin="5 0"/>
                         <TextBlock VerticalAlignment="Center" Text="{Binding CanvasSizeText}" Margin="5 0"/>

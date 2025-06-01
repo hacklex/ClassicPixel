@@ -4,6 +4,8 @@
 
 This is a simple pixel art image editor built almost entirely by AI :)
 
+Works on macOS too!
+
 ## Features
 
 - Rectangular selection
