@@ -24,10 +24,7 @@
     <Window.Styles>
         <Style Selector="CaptionButtons">
             <Setter Property="Margin" Value="0 0 6 0"></Setter>
-        </Style>
-        <Style Selector="TextBlock">
-            <Setter Property="Margin" Value="0 2 0 -1"></Setter>
-        </Style>
+        </Style> 
     </Window.Styles>
     
     <Window.Resources>
@@ -45,11 +42,14 @@
                     <DockPanel x:Name="CustomTitleBar" PointerReleased="OnTitlePointerReleased" PointerMoved="OnTitlePointerMoved" PointerPressed="OnTitlePointerPressed" >
                         <Image VerticalAlignment="Center" Source="/Assets/Bitmap16.png" Height="16" Margin="2 1 2 1"></Image>
                         <OnPlatform>
+                            <OnPlatform.Default>
+                                <Grid/>
+                            </OnPlatform.Default>
                             <OnPlatform.macOS>
                                 <CaptionButtons Loaded="OnMacCaptionButtonsLoaded" DockPanel.Dock="Right" Margin="0 0 1 0" />
                             </OnPlatform.macOS>
                         </OnPlatform>
-                        <TextBlock IsHitTestVisible="False" VerticalAlignment="Center" Foreground="White" Text="{Binding Title, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"></TextBlock>
+                        <TextBlock Margin="{OnPlatform Default='0 0 0 0', macOS='0 2 0 -1'}" IsHitTestVisible="False" VerticalAlignment="Center" Foreground="White" Text="{Binding Title, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"></TextBlock>
                     </DockPanel>
                 </Grid>
             </Border>
@@ -61,33 +61,35 @@
                             <Style Selector="MenuItem ClassicBorderDecorator ClassicBorderDecorator">
                                 <OnPlatform>
                                     <OnPlatform.macOS>
+                                        <Setter Property="Margin" Value="0 0 0 0"></Setter> 
                                     </OnPlatform.macOS>
                                     <OnPlatform.Default>
                                         <Setter Property="Margin" Value="0 1 0 0"></Setter> 
                                     </OnPlatform.Default>
                                 </OnPlatform>
                             </Style>
-                            <Style Selector="MenuItem MenuItem">
-                                <OnPlatform>
-                                    <OnPlatform.macOS>
-                                        <Setter Property="Padding" Value="0 1 0 -1"></Setter> 
-                                    </OnPlatform.macOS>
-                                    <OnPlatform.Default>
-                                        <Setter Property="Padding" Value="0 0 0 1"></Setter> 
-                                    </OnPlatform.Default>
-                                </OnPlatform>
-                            </Style>
                             <Style Selector="MenuItem">
                                 <OnPlatform>
+                                    <OnPlatform.Default> 
+                                        <Setter Property="Margin" Value="0 "></Setter> 
+                                    </OnPlatform.Default>
                                     <OnPlatform.macOS>
                                         <Setter Property="Padding" Value="5 "></Setter> 
                                     </OnPlatform.macOS> 
                                 </OnPlatform>
+                            </Style>
+                            <Style Selector="MenuItem MenuItem">
                                 <OnPlatform>
+                                    <OnPlatform.Default>
+                                        <Setter Property="Padding" Value="0 0 0 1"></Setter> 
+                                    </OnPlatform.Default>
                                     <OnPlatform.macOS>
-                                        <Setter Property="ClipToBounds" Value="False"></Setter> 
-                                    </OnPlatform.macOS> 
+                                        <Setter Property="Padding" Value="0 1 0 -1"></Setter> 
+                                    </OnPlatform.macOS>
                                 </OnPlatform>
+                            </Style>
+                            <Style Selector="AccessText">
+                                <Setter Property="ClipToBounds" Value="False"></Setter>
                             </Style>
                         </Menu.Styles>
                     <MenuItem Height="22" Header="File">
