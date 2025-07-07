@@ -33,6 +33,8 @@ namespace PixelEditor.ViewModels
         
         [ObservableProperty] private bool _hasSelection;
         
+        [ObservableProperty] private bool _isAntialiasingEnabled = false;
+        
         private PixelEditor _pixelEditor; 
 
         private bool ShouldShowToleranceSetup(ToolType currentTool) => currentTool is ToolType.MagicWand or ToolType.Eraser or ToolType.Selection or ToolType.Fill;
@@ -42,7 +44,11 @@ namespace PixelEditor.ViewModels
         {
             base.OnPropertyChanged(e);
             if (e.PropertyName == nameof(MagicWandTolerance)) StatusText = $"Magic Wand Tolerance: {MagicWandTolerance}";
-            if (e.PropertyName == nameof(SelectedTool)) OnPropertyChanged(nameof(IsToleranceSetupVisible));
+            if (e.PropertyName == nameof(SelectedTool)) 
+            {
+                OnPropertyChanged(nameof(IsToleranceSetupVisible));
+                OnPropertyChanged(nameof(IsLineToolSelected));
+            }
         }
         
         // Convenience properties for backward compatibility and readability in code
@@ -52,6 +58,7 @@ namespace PixelEditor.ViewModels
         public bool IsFillToolSelected => SelectedTool == ToolType.Fill;
         public bool IsEraserToolSelected => SelectedTool == ToolType.Eraser;
         public bool IsColorPickerToolSelected => SelectedTool == ToolType.ColorPicker;
+        public bool IsLineToolSelected => SelectedTool == ToolType.StraightLine;
        
         public List<(int startX, int startY, int endX, int endY)> SelectionRegions { get; private set; } = [];
 
@@ -69,6 +76,9 @@ namespace PixelEditor.ViewModels
         public ICommand MagicWandSelectCommand { get; }
         public ICommand UpdatePositionCommand { get; }
         public ICommand PreviewBrushCommand { get; }
+        public ICommand LineStartCommand { get; }
+        public ICommand LineUpdateCommand { get; }
+        public ICommand LineEndCommand { get; }
         
         public MainViewModel()
         {
@@ -85,6 +95,9 @@ namespace PixelEditor.ViewModels
             MagicWandSelectCommand = new RelayCommand(OnMagicWandSelect);
             UpdatePositionCommand = new RelayCommand(OnUpdatePosition);
             PreviewBrushCommand = new RelayCommand(OnPreviewBrush);
+            LineStartCommand = new RelayCommand(OnLineStart);
+            LineUpdateCommand = new RelayCommand(OnLineUpdate);
+            LineEndCommand = new RelayCommand(OnLineEnd);
             AddCurrentColorCommand = new RelayCommand(_ => ColorPaletteViewModel.AddColor(PrimaryColor));
             ColorPaletteViewModel.ColorSelected += OnColorSelected;
             UpdateCanvasBitmap();
@@ -727,7 +740,7 @@ namespace PixelEditor.ViewModels
                 else if (IsMagicWandToolSelected)
                     StatusText = "Magic Wand Tool";
                 else if (IsFillToolSelected)
-                    StatusText = "Fill Tool";
+                    StatusText = "Flood Fill Tool";
                 else if (IsEraserToolSelected)
                     StatusText = $"Eraser Tool (Tolerance: {MagicWandTolerance})";
             }
@@ -773,5 +786,79 @@ namespace PixelEditor.ViewModels
         public void SwapSelectedColors() => (PrimaryColor, SecondaryColor) = (SecondaryColor, PrimaryColor);
         
         public Color GetPixelColor(int x, int y) => _pixelEditor.GetPixelColor(x, y);
+        
+        // Line tool event handlers
+        private void OnLineStart(object? parameter)
+        {
+            if (IsLineToolSelected && parameter is PixelEventArgs args)
+            {
+                // Convert screen coordinates to canvas coordinates
+                int canvasX = args.X;
+                int canvasY = args.Y;
+                
+                // Store line start coordinates
+                SelectionStartX = canvasX;
+                SelectionStartY = canvasY;
+                
+                // Also set end coordinates to same position initially
+                SelectionEndX = canvasX;
+                SelectionEndY = canvasY;
+                
+                StatusText = "Line started - drag to set end point";
+            }
+        }
+        
+        private void OnLineUpdate(object? parameter)
+        {
+            if (IsLineToolSelected && parameter is PixelEventArgs args)
+            {
+                // Convert screen coordinates to canvas coordinates
+                int canvasX = args.X;
+                int canvasY = args.Y;
+                
+                // Update end coordinates
+                SelectionEndX = canvasX;
+                SelectionEndY = canvasY;
+                
+                // Clear previous preview and show line preview
+                _pixelEditor.ClearPreview();
+                _pixelEditor.PreviewLine(SelectionStartX, SelectionStartY, SelectionEndX, SelectionEndY, 
+                    args.IsLeftButton ? PrimaryColor : SecondaryColor, IsAntialiasingEnabled);
+                
+                UpdateCanvasBitmap();
+                
+                StatusText = $"Line: ({SelectionStartX},{SelectionStartY}) to ({SelectionEndX},{SelectionEndY})";
+            }
+        }
+        
+        private void OnLineEnd(object? parameter)
+        {
+            if (IsLineToolSelected && parameter is PixelEventArgs args)
+            {
+                // Convert screen coordinates to canvas coordinates
+                int canvasX = args.X;
+                int canvasY = args.Y;
+                
+                // Update final end coordinates
+                SelectionEndX = canvasX;
+                SelectionEndY = canvasY;
+                
+                // Clear preview and draw the actual line
+                _pixelEditor.ClearPreview();
+                _pixelEditor.DrawLine(SelectionStartX, SelectionStartY, SelectionEndX, SelectionEndY, 
+                    args.IsLeftButton ? PrimaryColor : SecondaryColor, IsAntialiasingEnabled);
+                
+                UpdateCanvasBitmap();
+                
+                int length = (int)Math.Sqrt(Math.Pow(SelectionEndX - SelectionStartX, 2) + Math.Pow(SelectionEndY - SelectionStartY, 2));
+                StatusText = $"Line drawn: {length} pixels long" + (IsAntialiasingEnabled ? " (antialiased)" : "");
+            }
+        }
+        
+        public void SelectLineTool()
+        {
+            SelectedTool = ToolType.StraightLine;
+            StatusText = "Straight Line Tool [l] - Click and drag to draw lines";
+        }
     }
 }

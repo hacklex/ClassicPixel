@@ -142,6 +142,12 @@ namespace PixelEditor
                         }
                         break;
                         
+                    case ToolType.StraightLine:
+                        ViewModel.LineStartCommand.Execute(new PixelEventArgs(x, y, isLeftButton, _lastMouseDownColor, isCtrlPressed, isAltPressed));
+                        _selectionStart = adjustedPoint;
+                        _isSelecting = true;
+                        break;
+                        
                     default:
                         // Drawing tools (Pencil, Fill, Eraser)
                         ViewModel.DrawPixelCommand.Execute(new PixelEventArgs(x, y, isLeftButton, _lastMouseDownColor));
@@ -206,6 +212,11 @@ namespace PixelEditor
                     // Update the selection overlay whenever selection changes
                     UpdateSelectionOverlay(EditorImage.Bounds.Width, EditorImage.Bounds.Height);
                 }
+                else if (_isSelecting && ViewModel.SelectedTool == ToolType.StraightLine)
+                {
+                    bool isLeftButton = point.Properties.IsLeftButtonPressed;
+                    ViewModel.LineUpdateCommand.Execute(new PixelEventArgs(x, y, isLeftButton, _lastMouseDownColor));
+                }
                 else
                 {
                     ViewModel.UpdatePositionCommand.Execute(new PixelEventArgs(x, y, point.Properties.IsLeftButtonPressed, _lastMouseDownColor));
@@ -264,6 +275,18 @@ namespace PixelEditor
                 
                 // Update the selection overlay after ending selection
                 UpdateSelectionOverlay(EditorImage.Bounds.Width, EditorImage.Bounds.Height);
+            }
+            else if (_isSelecting && ViewModel.SelectedTool == ToolType.StraightLine)
+            {
+                var point = e.GetCurrentPoint(ImageCanvas);
+                Point adjustedPoint = GetImageCoordinates(point.Position);
+                int x = (int)adjustedPoint.X;
+                int y = (int)adjustedPoint.Y;
+                
+                bool isLeftButton = e.InitialPressMouseButton == MouseButton.Left;
+                ViewModel.LineEndCommand.Execute(new PixelEventArgs(x, y, isLeftButton, _lastMouseDownColor));
+                
+                _isSelecting = false;
             }
             else
             {
@@ -589,6 +612,10 @@ namespace PixelEditor
                     break;
                 case Key.K:
                     ViewModel.SelectColorPickerTool();
+                    e.Handled = true;
+                    break;
+                case Key.L:
+                    ViewModel.SelectLineTool();
                     e.Handled = true;
                     break;
                 case Key.X:

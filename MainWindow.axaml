@@ -175,22 +175,39 @@
                         </ToggleButton>
                         <ToggleButton ToolTip.Tip="Pencil [b]" Tag="Pencil" IsCheckedChanged="ToggleButtonIsCheckedChanged" Padding="0" IsChecked="{Binding SelectedTool, Converter={StaticResource ToolTypeConverter}, ConverterParameter=Pencil}" Focusable="False">
                             <Grid Width="16" Height="16">
-                                <Image Margin="0" Height="16" Source="/Assets/Pencil16.png"></Image>
+                                <Path Width="16" Height="16" StrokeThickness="1" Margin="0 -1 0 1" Data="M13.5 3.5l2 2-8 8-2-2ZM7.5 13.5 3.5 15.5 5.5 11.5 6.5 12.5 3.5 15.5M1.5 15.5Q.5 15.5.5 12.5.5 7.5 2.5 7.5 5.5 7.5 5.5 1.5" Stroke="Black"></Path>
+                                <!-- <Image Margin="0" Height="16" Source="/Assets/Pencil16.png"></Image> -->
+                            </Grid>
+                        </ToggleButton>
+                        <ToggleButton ToolTip.Tip="Straight Line [l]" Tag="StraightLine" IsCheckedChanged="ToggleButtonIsCheckedChanged" Padding="0" IsChecked="{Binding SelectedTool, Converter={StaticResource ToolTypeConverter}, ConverterParameter=StraightLine}" Focusable="False">
+                            <Grid Width="16" Height="16">
+                                <Path Margin="0" ClipToBounds="False" StrokeThickness="1" Stroke="Black" Data="M13 13 3 3A.5.5 90 011.5 1.5.5.5 90 013 3L13 13a.5.5 90 011.5 1.5.5.5 90 01-1.5-1.5"></Path>
+                                
                             </Grid>
                         </ToggleButton>
                         <ToggleButton ToolTip.Tip="Eraser [b]" Tag="Eraser" IsCheckedChanged="ToggleButtonIsCheckedChanged" Padding="0" IsChecked="{Binding SelectedTool, Converter={StaticResource ToolTypeConverter}, ConverterParameter=Eraser}" Focusable="False">
-                            <Grid Width="16" Height="16">
-                                <Image Margin="0" Height="16" Source="/Assets/Eraser16.png"></Image>
+                            <Grid RenderOptions.EdgeMode="Antialias" RenderOptions.TextRenderingMode="Antialias" RenderOptions.RequiresFullOpacityHandling="True" RenderOptions.BitmapInterpolationMode="HighQuality" Width="16" Height="16" UseLayoutRounding="True">
+                                <Path Stretch="None" UseLayoutRounding="True" Width="16" Height="16" Margin="0" ClipToBounds="False" StrokeThickness="1" Stroke="Black" Fill="Transparent" Data="M8.5 10.5 8.5 13.5 2.5 13.5 1.5 12.5 1.5 11.5 2.5 8.5"></Path>
+                                <Path Stretch="None" UseLayoutRounding="True" Width="16" Height="16" Margin="0" ClipToBounds="False" StrokeThickness="1" Stroke="Black" Fill="#ffff80" Data="M9.5 9.5 14.5 4.5 13.5 3.5 8.5 3.5 2.5 9.5"></Path>
+                                <Path Stretch="None" UseLayoutRounding="True" Width="16" Height="16" Margin="0" ClipToBounds="False" StrokeThickness="1" Stroke="Black" Fill="#808000" Data="M14.5 4.5v3L8.5 13.5V10.5Z"></Path>
+                                                                
+                                <!-- <Image Margin="0" Height="16" Source="/Assets/Eraser16.png"></Image> -->
                             </Grid>
                         </ToggleButton>
                         <ToggleButton ToolTip.Tip="Flood Fill [f]" Tag="Fill" IsCheckedChanged="ToggleButtonIsCheckedChanged" Padding="0" IsChecked="{Binding SelectedTool, Converter={StaticResource ToolTypeConverter}, ConverterParameter=Fill}" Focusable="False">
                             <Grid Width="16" Height="16">
-                                <Image Margin="0" Height="16" Source="/Assets/Fill16.png"></Image>
+                                <Path Width="16" Height="16" Margin="0 -1 0 1" ClipToBounds="False" StrokeThickness="1" Stroke="Black" Fill="Black" Data="M13.5 1.5 10.5 3.5 10.5 7.5M7.5 7.5 4.5 10.5 9.5 15.5 15.5 9.5 13.5 7.5 11.5 9.5 9.5 9.5ZM4.5 7.5 3.5 7.5 1.5 9.5 1.5 12.5.5 13.5.5 15.5 3.5 15.5 4.5 14.5 6.5 14.5 5.5 13.5 4.5 13.5 3.5 12.5 2.5 11.5 2.5 9.5Z"></Path>
+                                <Path Width="16" Height="16" Margin="0 -1 0 1" ClipToBounds="False" StrokeThickness="1" Stroke="Black" Data="M7.5 7.5 L 10.5 4.5 13.5 7.5"></Path>
+                                                               
                             </Grid>
                         </ToggleButton>
                         <ToggleButton ToolTip.Tip="Color Picker [k]" Tag="ColorPicker" IsCheckedChanged="ToggleButtonIsCheckedChanged" Padding="0" IsChecked="{Binding SelectedTool, Converter={StaticResource ToolTypeConverter}, ConverterParameter=ColorPicker}" Focusable="False">
                             <Grid Width="16" Height="16">
-                                <Image Margin="0" Height="16" Source="/Assets/ColorPicker16.png"></Image>
+                                <Path  Margin="0 0" ClipToBounds="False" StrokeThickness="1" Stroke="Black" Fill="Black" Data="M13.5.5 14.5.5 15.5 1.5 15.5 2.5 13.5 4.5 13.5 6.5 12.5 7.5 8.5 3.5 9.5 2.5 11.5 2.5ZM9 6 10 7 3 14 2 13ZM2 14 .5 15.5">
+
+                                </Path>
+                                <Path Stroke="#80000000" Data="M1.5 13.5 L 2.6 15.5" StrokeThickness="1"></Path>
+                                <!-- <Image Margin="0" Height="16" Source="/Assets/ColorPicker16.png"></Image> -->
                             </Grid>
                         </ToggleButton> 
                          
@@ -200,6 +217,21 @@
                         <TextBlock LetterSpacing="-0.2" Margin="1 0 0 0">Tolerance:</TextBlock>
                         <NumericUpDown Margin="2 0" Minimum="0" Maximum="765" Value="{Binding MagicWandTolerance}"></NumericUpDown>
                     </StackPanel>
+                    
+                    <ClassicBorderDecorator BorderThickness="1" BorderStyle="ThinPressed" HorizontalAlignment="Center" IsVisible="{Binding IsLineToolSelected}" Margin="0 2 0 0">
+                        <StackPanel>
+                            <RadioButton Margin="4 1" IsChecked="{Binding IsAntialiasingEnabled}">
+                                <Grid VerticalAlignment="Center">
+                                    <Image Width="24" Height="8" Source="/Assets/SmoothLine.png"></Image>
+                                </Grid>
+                            </RadioButton>
+                            <RadioButton Margin="4 1" IsChecked="{Binding !IsAntialiasingEnabled}">
+                                <Grid VerticalAlignment="Center">
+                                    <Image Width="24" Height="8" Source="/Assets/SharpLine.png"></Image>
+                                </Grid>
+                            </RadioButton>
+                        </StackPanel>
+                    </ClassicBorderDecorator>
                     
                 </StackPanel>
 
