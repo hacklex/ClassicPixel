@@ -95,7 +95,7 @@ namespace PixelEditor
                 _isDragging = true;
                 _lastPosition = e.GetPosition(CanvasContainer);
                 _lastImagePosition = new(Canvas.GetLeft(EditorImage), Canvas.GetTop(EditorImage));
-                ImageCanvas.Cursor = new Cursor(StandardCursorType.DragMove);
+                Cursor = new Cursor(StandardCursorType.SizeAll);
                 e.Handled = true;
             }
             // Otherwise, handle normal drawing/selection
@@ -238,7 +238,7 @@ namespace PixelEditor
                 (e.InitialPressMouseButton == MouseButton.Left && e.KeyModifiers.HasFlag(KeyModifiers.Alt))))
             {
                 _isDragging = false;
-                ImageCanvas.Cursor = Cursor.Default;
+                Cursor = Cursor.Default;
                 e.Handled = true;
             }
             // Handle the end of selection
