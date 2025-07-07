@@ -4,19 +4,17 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Classic.Avalonia.Theme;
+using CommunityToolkit.Mvvm.ComponentModel;
 using PixelEditor.ViewModels;
 
 namespace PixelEditor
 {
-    public class PaletteColor
+    public partial class PaletteColor : ViewModelBase
     {
-        public Color Color { get; set; }
+        [ObservableProperty] private bool _isUnderCursor;
+        [ObservableProperty] private Color _color;
         public IBrush ColorBrush => new SolidColorBrush(Color);
-
-        public PaletteColor(Color color)
-        {
-            Color = color;
-        }
+        public PaletteColor(Color color) => Color = color;
     }
     
     public delegate void ColorChangedEventHandler(Color selectedColor, bool isLeftButton);

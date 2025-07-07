@@ -20,11 +20,11 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="{x:Type pixelEditor:PaletteColor}">
                         <Border Margin="0" Padding="0" Background="{StaticResource BgBrush}">
-                            <ClassicBorderDecorator Width="16" Height="16"  
+                            <ClassicBorderDecorator Width="16" Height="16"
+                                                    BorderBrush="{Binding IsUnderCursor, Converter={x:Static pixelEditor:IsUnderCursorToBorderBrushConverter.Instance}}"
                                     BorderThickness="2" BorderStyle="Sunken"
                                     Background="{Binding ColorBrush}"
                                     PointerPressed="OnColorPressed">
-                                
                             </ClassicBorderDecorator>
                         </Border>
                     </DataTemplate>

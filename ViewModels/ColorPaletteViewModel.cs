@@ -1,20 +1,27 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using Avalonia.Media;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace PixelEditor.ViewModels
 {
-    public class ColorPaletteViewModel : ViewModelBase
+    public partial class ColorPaletteViewModel : ViewModelBase
     {
-        private Color _selectedColor;
+        [ObservableProperty] private Color _selectedColor;
+        private Color? _colorUnderCursor;
+
+        public Color? ColorUnderCursor
+        {
+            get => _colorUnderCursor;
+            set
+            {
+                SetProperty(ref _colorUnderCursor, value);
+                foreach (var paletteColor in Colors)
+                    paletteColor.IsUnderCursor = paletteColor.Color == value || (paletteColor.Color.A == 0 && value is { A: 0 });
+            }
+        }
 
         public ObservableCollection<PaletteColor> Colors { get; } = new();
-
-        public Color SelectedColor
-        {
-            get => _selectedColor;
-            set => SetProperty(ref _selectedColor, value);
-        }
         
         public ICommand RemoveColorCommand { get; }
         public ICommand SelectColorCommand { get; }
@@ -55,8 +62,7 @@ namespace PixelEditor.ViewModels
                 if (paletteColor.Color.Equals(color))
                     return;
             }
-            
-            Colors.Add(new PaletteColor(color));
+            Colors.Add(new PaletteColor(color) { IsUnderCursor = (color == ColorUnderCursor) || (ColorUnderCursor is { A: 0 } && color.A == 0) });
         }
 
         public static ColorPaletteViewModel Dummy
@@ -161,15 +167,5 @@ namespace PixelEditor.ViewModels
         }
     }
 
-    public class ColorSelectionData
-    {
-        public Color Color { get; set; }
-        public bool IsLeftButton { get; set; }
-
-        public ColorSelectionData(Color color, bool isLeftButton)
-        {
-            Color = color;
-            IsLeftButton = isLeftButton;
-        }
-    }
+    public record ColorSelectionData(Color Color, bool IsLeftButton);
 }

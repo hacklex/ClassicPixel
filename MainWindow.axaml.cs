@@ -189,6 +189,7 @@ namespace PixelEditor
                 Point adjustedPoint = GetImageCoordinates(point.Position);
                 int x = (int)adjustedPoint.X;
                 int y = (int)adjustedPoint.Y;
+                ViewModel.ColorPaletteViewModel.ColorUnderCursor = x >= 0 && x < ImageWidth && y >= 0 && y < ImageHeight ? ViewModel.GetPixelColor(x, y) : null;
                 
                 if (_isSelecting && ViewModel.SelectedTool == ToolType.Selection)
                 {
@@ -537,6 +538,8 @@ namespace PixelEditor
 
         private void OnTitlePointerPressed(object? sender, PointerPressedEventArgs e)
         {
+            var pos = e.GetPosition(CustomTitleBar);
+            if (!CustomTitleBar.Bounds.Contains(pos)) return;
             if (e.ClickCount == 2 && e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
             {
                 WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
@@ -619,6 +622,11 @@ namespace PixelEditor
         {
             if (sender is not CaptionButtons captionButtons) return;
             captionButtons.Attach(this);
+        }
+
+        private void Canvas_OnPointerExited(object? sender, PointerEventArgs e)
+        {
+            if (ViewModel is not null) ViewModel.ColorPaletteViewModel.ColorUnderCursor = null;
         }
     }
 }

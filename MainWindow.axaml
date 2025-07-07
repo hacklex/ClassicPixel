@@ -214,6 +214,7 @@
                     <Grid x:Name="CanvasContainer" ClipToBounds="True">
                         <Canvas Name="ImageCanvas" 
                                 PointerWheelChanged="Canvas_PointerWheelChanged"
+                                PointerExited="Canvas_OnPointerExited"
                                 RenderOptions.EdgeMode="Aliased" 
                                 RenderOptions.BitmapInterpolationMode="None"
                                 HorizontalAlignment="Stretch"

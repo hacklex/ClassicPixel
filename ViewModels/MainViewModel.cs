@@ -774,49 +774,4 @@ namespace PixelEditor.ViewModels
         
         public Color GetPixelColor(int x, int y) => _pixelEditor.GetPixelColor(x, y);
     }
-
-    public class PixelEventArgs
-    {
-        public int X { get; }
-        public int Y { get; }
-        public bool IsLeftButton { get; }
-        public bool IsCtrlPressed { get; }
-        public bool IsAltPressed { get; }
-        public Color MouseDownColor { get; }
-
-        public PixelEventArgs(int x, int y, bool isLeftButton, Color mouseDownColor, bool isCtrlPressed = false, bool isAltPressed = false)
-        {
-            X = x;
-            Y = y;
-            IsLeftButton = isLeftButton;
-            IsCtrlPressed = isCtrlPressed;
-            IsAltPressed = isAltPressed;
-            MouseDownColor = mouseDownColor;
-        }
-    }
-
-    public enum SelectionMode
-    {
-        Replace,  // Replace the current selection
-        Add,      // Add to the current selection (Ctrl+drag)
-        Subtract  // Subtract from the current selection (Alt+drag)
-    }
-    
-    public class SelectionEventArgs
-    {
-        public int StartX { get; }
-        public int StartY { get; }
-        public int EndX { get; }
-        public int EndY { get; }
-        public SelectionMode Mode { get; }
-    
-        public SelectionEventArgs(int startX, int startY, int endX, int endY, SelectionMode mode = SelectionMode.Replace)
-        {
-            StartX = startX;
-            StartY = startY;
-            EndX = endX;
-            EndY = endY;
-            Mode = mode;
-        }
-    }
 }
