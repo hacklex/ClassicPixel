@@ -175,7 +175,7 @@
                         </ToggleButton>
                         <ToggleButton ToolTip.Tip="Pencil [b]" Tag="Pencil" IsCheckedChanged="ToggleButtonIsCheckedChanged" Padding="0" IsChecked="{Binding SelectedTool, Converter={StaticResource ToolTypeConverter}, ConverterParameter=Pencil}" Focusable="False">
                             <Grid Width="16" Height="16">
-                                <Path Width="16" Height="16" StrokeThickness="1" Margin="0 -1 0 1" Data="M13.5 3.5l2 2-8 8-4 2L5.5 11.5ZM1.5 15.5Q.5 15.5.5 12.5.5 7.5 2.5 7.5 5.5 7.5 5.5 1.5M6 12 7 13 3.5 15.5 6 12Z" Stroke="Black"></Path>
+                                <Path Width="16" Height="16" StrokeThickness="1" Margin="0 -1 0 1" StrokeJoin="Round" Data="M13.5 3.5l2 2-8 8-4 2L5.5 11.5ZM1.5 15.5Q.5 15.5.5 12.5.5 7.5 2.5 7.5 5.5 7.5 5.5 1.5M6 12 7 13 3.5 15.5 6 12Z" Stroke="Black"></Path>
                                 <!-- <Image Margin="0" Height="16" Source="/Assets/Pencil16.png"></Image> -->
                             </Grid>
                         </ToggleButton>
