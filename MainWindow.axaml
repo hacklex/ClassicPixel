@@ -9,7 +9,7 @@
         Icon="/Assets/Bitmap.ico" 
         x:DataType="{x:Type vm:MainViewModel}"
         RenderOptions.TextRenderingMode="SubpixelAntialias"
-        RenderOptions.BitmapInterpolationMode="None"
+        RenderOptions.BitmapInterpolationMode="HighQuality"
         FontFamily="Segoe UI, SF Pro Display, Noto Sans, Cantarel"
         TextBlock.LetterSpacing="0"
         FontSize="12"
@@ -186,10 +186,10 @@
                             </Grid>
                         </ToggleButton>
                         <ToggleButton ToolTip.Tip="Eraser [b]" Tag="Eraser" IsCheckedChanged="ToggleButtonIsCheckedChanged" Padding="0" IsChecked="{Binding SelectedTool, Converter={StaticResource ToolTypeConverter}, ConverterParameter=Eraser}" Focusable="False">
-                            <Grid RenderOptions.EdgeMode="Antialias" RenderOptions.TextRenderingMode="Antialias" RenderOptions.RequiresFullOpacityHandling="True" RenderOptions.BitmapInterpolationMode="HighQuality" Width="16" Height="16" UseLayoutRounding="True">
-                                <Path Stretch="None" UseLayoutRounding="True" Width="16" Height="16" Margin="0" ClipToBounds="False" StrokeThickness="1" Stroke="Black" Fill="Transparent" Data="M8.5 10.5 8.5 13.5 2.5 13.5 1.5 12.5 1.5 11.5 2.5 8.5"></Path>
-                                <Path Stretch="None" UseLayoutRounding="True" Width="16" Height="16" Margin="0" ClipToBounds="False" StrokeThickness="1" Stroke="Black" Fill="#ffff80" Data="M9.5 9.5 14.5 4.5 13.5 3.5 8.5 3.5 2.5 9.5"></Path>
-                                <Path Stretch="None" UseLayoutRounding="True" Width="16" Height="16" Margin="0" ClipToBounds="False" StrokeThickness="1" Stroke="Black" Fill="#808000" Data="M14.5 4.5v3L8.5 13.5V10.5Z"></Path>
+                            <Grid RenderOptions.EdgeMode="Antialias" RenderOptions.TextRenderingMode="Antialias" RenderOptions.RequiresFullOpacityHandling="True" RenderOptions.BitmapInterpolationMode="HighQuality" Width="16" Height="16" UseLayoutRounding="False">
+                                <Path Stretch="None" UseLayoutRounding="False" Width="16" Height="16" Margin="0" ClipToBounds="False" StrokeThickness="1" Stroke="Black" Fill="Transparent" Data="M8.5 10.5 8.5 13.5 2.5 13.5 1.5 12.5 1.5 11.5 2.5 8.5"></Path>
+                                <Path Stretch="None" UseLayoutRounding="False" Width="16" Height="16" Margin="0" ClipToBounds="False" StrokeThickness="1" Stroke="Black" Fill="#ffff80" Data="M9.5 9.5 14.5 4.5 13.5 3.5 8.5 3.5 2.5 9.5"></Path>
+                                <Path Stretch="None" UseLayoutRounding="False" Width="16" Height="16" Margin="0" ClipToBounds="False" StrokeThickness="1" Stroke="Black" Fill="#808000" Data="M14.5 4.5v3L8.5 13.5V10.5Z"></Path>
                                                                 
                                 <!-- <Image Margin="0" Height="16" Source="/Assets/Eraser16.png"></Image> -->
                             </Grid>
@@ -203,14 +203,21 @@
                         </ToggleButton>
                         <ToggleButton ToolTip.Tip="Color Picker [k]" Tag="ColorPicker" IsCheckedChanged="ToggleButtonIsCheckedChanged" Padding="0" IsChecked="{Binding SelectedTool, Converter={StaticResource ToolTypeConverter}, ConverterParameter=ColorPicker}" Focusable="False">
                             <Grid Width="16" Height="16">
-                                <Path  Margin="0 0" ClipToBounds="False" StrokeThickness="1" Stroke="Black" Fill="Black" Data="M13.5.5 14.5.5 15.5 1.5 15.5 2.5 13.5 4.5 13.5 6.5 12.5 7.5 8.5 3.5 9.5 2.5 11.5 2.5ZM9 6 10 7 3 14 2 13ZM2 14 .5 15.5">
-
-                                </Path>
-                                <Path Stroke="#80000000" Data="M1.5 13.5 L 2.6 15.5" StrokeThickness="1"></Path>
+                                <Path RenderOptions.EdgeMode="Antialias" RenderOptions.TextRenderingMode="Antialias" RenderOptions.RequiresFullOpacityHandling="True" RenderOptions.BitmapInterpolationMode="HighQuality"  Margin="0 0" ClipToBounds="False" StrokeThickness="1" Stroke="Black" Fill="Black" Data="M13.5.5 14.5.5 15.5 1.5 15.5 2.5 13.5 4.5 13.5 6.5 12.5 7.5 8.5 3.5 9.5 2.5 11.5 2.5ZM9 6 10 7 3 14 2 13ZM2 14 .5 15.5" />
+                                <Line Width="16" Height="16" StartPoint="1 13" EndPoint="3 15" Stroke="#80000000" StrokeThickness="1"></Line>
+                                <!-- <Path Stroke="#80000000" Data="M1.5 13.5 L 2.6 15.5" StrokeThickness="1"></Path> -->
                                 <!-- <Image Margin="0" Height="16" Source="/Assets/ColorPicker16.png"></Image> -->
                             </Grid>
                         </ToggleButton> 
                          
+                        <ToggleButton ToolTip.Tip="Unused" Tag="Unused" Padding="0" Focusable="False">
+                            <Grid UseLayoutRounding="False" Width="16" Height="16"> 
+                                <!-- <Path Stroke="#80000000" Data="M1.5 13.5 L 2.6 15.5" StrokeThickness="1"></Path> -->
+                                <!-- <Image Margin="0" Height="16" Source="/Assets/ColorPicker16.png"></Image> -->
+                                <Path Margin="0 0 0 0" UseLayoutRounding="False" Stroke="Black" StrokeJoin="Round"  StrokeThickness="1" Fill="Black" Width="16" Height="16"
+                                          Data="M13.5.5 14.5.5 15.5 1.5 15.5 2.5 13.5 4.5 13.5 6.5 12.5 7.5 8.5 3.5 9.5 2.5 11.5 2.5ZM9 6 10 7 2.5 14.5.5 15.5 1.5 13.5Z" ></Path>
+                            </Grid>
+                        </ToggleButton> 
                     </WrapPanel>
                     
                     <StackPanel IsVisible="{Binding IsToleranceSetupVisible}" Margin="0 2 0 0">
