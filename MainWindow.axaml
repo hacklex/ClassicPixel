@@ -186,10 +186,10 @@
                             </Grid>
                         </ToggleButton>
                         <ToggleButton ToolTip.Tip="Eraser [b]" Tag="Eraser" IsCheckedChanged="ToggleButtonIsCheckedChanged" Padding="0" IsChecked="{Binding SelectedTool, Converter={StaticResource ToolTypeConverter}, ConverterParameter=Eraser}" Focusable="False">
-                            <Grid RenderOptions.EdgeMode="Antialias" RenderOptions.TextRenderingMode="Antialias" RenderOptions.RequiresFullOpacityHandling="True" RenderOptions.BitmapInterpolationMode="HighQuality" Width="16" Height="16" UseLayoutRounding="False">
-                                <Path Stretch="None" UseLayoutRounding="False" Width="16" Height="16" Margin="0" ClipToBounds="False" StrokeThickness="1" Stroke="Black" Fill="Transparent" Data="M8.5 10.5 8.5 13.5 2.5 13.5 1.5 12.5 1.5 11.5 2.5 8.5"></Path>
-                                <Path Stretch="None" UseLayoutRounding="False" Width="16" Height="16" Margin="0" ClipToBounds="False" StrokeThickness="1" Stroke="Black" Fill="#ffff80" Data="M9.5 9.5 14.5 4.5 13.5 3.5 8.5 3.5 2.5 9.5"></Path>
-                                <Path Stretch="None" UseLayoutRounding="False" Width="16" Height="16" Margin="0" ClipToBounds="False" StrokeThickness="1" Stroke="Black" Fill="#808000" Data="M14.5 4.5v3L8.5 13.5V10.5Z"></Path>
+                            <Grid Width="16" Height="16">
+                                <Path Stretch="None" Width="16" Height="16" Margin="0" ClipToBounds="False" StrokeThickness="1" Stroke="Black" Fill="Transparent" Data="M 8.5 10 v3.5 h-7 v-3.5"></Path>
+                                <Path Stretch="None" Width="16" Height="16" Margin="0" ClipToBounds="False" StrokeJoin="Round" StrokeThickness="1" Stroke="Black" Fill="#ffff80" Data="M9.5 9.5 14.5 4.5 14.5 3.5 8.5 3.5 1.5 10.5"></Path>
+                                <Path Stretch="None" Width="16" Height="16" Margin="0" ClipToBounds="False" StrokeJoin="Round" StrokeThickness="1" Stroke="Black" Fill="#808000" Data="M14.5 4.5v3L8.5 13.5V10.5Z"></Path>
                                                                 
                                 <!-- <Image Margin="0" Height="16" Source="/Assets/Eraser16.png"></Image> -->
                             </Grid>
@@ -214,7 +214,7 @@
                             <Grid UseLayoutRounding="False" Width="16" Height="16"> 
                                 <!-- <Path Stroke="#80000000" Data="M1.5 13.5 L 2.6 15.5" StrokeThickness="1"></Path> -->
                                 <!-- <Image Margin="0" Height="16" Source="/Assets/ColorPicker16.png"></Image> -->
-                                <Path x:Name="UnusedToggle" Margin="0 0 0 0" UseLayoutRounding="False" Stroke="Black" StrokeJoin="Round"  StrokeThickness="1" Fill="Black" Width="16" Height="16"
+                                <Path x:Name="UnusedToggle" Margin="0 0 0 0" UseLayoutRounding="False" Stroke="Black" StrokeJoin="Round"  StrokeThickness="1" Fill="#808000" Width="16" Height="16"
                                           Data="M13.5 0.5 14.5 0.5 15.5 1.5 15.5 2.5 13.5 4.5 13.5 6.5 12.5 7.5 8.5 3.5 9.5 2.5 11.5 2.5ZM8.5 6.5 9.5 6.5 9.5 7.5 1.5 15.5 0.5 14.5Z M 0.5 15.5 1.5 15.5 0.5 15.5" ></Path>
                             </Grid>
                         </ToggleButton> 
