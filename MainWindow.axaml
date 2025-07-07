@@ -183,6 +183,21 @@
                                 <!-- <Image Source="/Assets/MagicWand16.png"></Image> -->
                             </Grid>
                         </ToggleButton>
+                        <ToggleButton ToolTip.Tip="Color Picker [k]" Tag="ColorPicker" IsCheckedChanged="ToggleButtonIsCheckedChanged" Padding="0" IsChecked="{Binding SelectedTool, Converter={StaticResource ToolTypeConverter}, ConverterParameter=ColorPicker}" Focusable="False">
+                            <Grid Width="16" Height="16">
+                                <Path Margin="0 0 0 0" UseLayoutRounding="False" Stroke="Black" StrokeJoin="Round"  StrokeThickness="1" Fill="Black" Width="16" Height="16"
+                                      Data="M13.5 0.5 14.5 0.5 15.5 1.5 15.5 2.5 13.5 4.5 13.5 6.5 12.5 7.5 8.5 3.5 9.5 2.5 11.5 2.5ZM8.5 6.5 9.5 6.5 9.5 7.5 1.5 15.5 0.5 14.5Z M 0.5 15.5 1.5 15.5 0.5 15.5Z" ></Path>
+                                <!-- <Path Stroke="#80000000" Data="M1.5 13.5 L 2.6 15.5" StrokeThickness="1"></Path> -->
+                                <!-- <Image Margin="0" Height="16" Source="/Assets/ColorPicker16.png"></Image> -->
+                            </Grid>
+                        </ToggleButton> 
+                        <ToggleButton ToolTip.Tip="Flood Fill [f]" Tag="Fill" IsCheckedChanged="ToggleButtonIsCheckedChanged" Padding="0" IsChecked="{Binding SelectedTool, Converter={StaticResource ToolTypeConverter}, ConverterParameter=Fill}" Focusable="False">
+                            <Grid Width="16" Height="16">
+                                <Path Width="16" Height="16" Margin="0 -1 0 1" ClipToBounds="False" StrokeThickness="1" Stroke="Black" Fill="Black" Data="M13.5 1.5 10.5 3.5 10.5 7.5M7.5 7.5 4.5 10.5 9.5 15.5 15.5 9.5 13.5 7.5 11.5 9.5 9.5 9.5ZM4.5 7.5 3.5 7.5 1.5 9.5 1.5 12.5.5 13.5.5 15.5 3.5 15.5 4.5 14.5 6.5 14.5 5.5 13.5 4.5 13.5 3.5 12.5 2.5 11.5 2.5 9.5Z"></Path>
+                                <Path Width="16" Height="16" Margin="0 -1 0 1" ClipToBounds="False" StrokeThickness="1" Stroke="Black" Data="M7.5 7.5 L 10.5 4.5 13.5 7.5"></Path>
+                                                               
+                            </Grid>
+                        </ToggleButton>
                         <ToggleButton ToolTip.Tip="Pencil [b]" Tag="Pencil" IsCheckedChanged="ToggleButtonIsCheckedChanged" Padding="0" IsChecked="{Binding SelectedTool, Converter={StaticResource ToolTypeConverter}, ConverterParameter=Pencil}" Focusable="False">
                             <Grid Width="16" Height="16">
                                 <Path Width="16" Height="16" StrokeThickness="1" Margin="0 -1 0 1" StrokeJoin="Round" Data="M13.5 3.5l2 2-8 8-4 2L5.5 11.5ZM1.5 15.5Q.5 15.5.5 12.5.5 7.5 2.5 7.5 5.5 7.5 5.5 1.5M6 12 7 13 3.5 15.5 6 12Z" Stroke="Black"></Path>
@@ -204,21 +219,12 @@
                                 <!-- <Image Margin="0" Height="16" Source="/Assets/Eraser16.png"></Image> -->
                             </Grid>
                         </ToggleButton>
-                        <ToggleButton ToolTip.Tip="Flood Fill [f]" Tag="Fill" IsCheckedChanged="ToggleButtonIsCheckedChanged" Padding="0" IsChecked="{Binding SelectedTool, Converter={StaticResource ToolTypeConverter}, ConverterParameter=Fill}" Focusable="False">
+                        
+                        <ToggleButton ToolTip.Tip="Rectangle [r]" Tag="Rectangle" IsCheckedChanged="ToggleButtonIsCheckedChanged" Padding="0" IsChecked="{Binding SelectedTool, Converter={StaticResource ToolTypeConverter}, ConverterParameter=Rectangle}" Focusable="False">
                             <Grid Width="16" Height="16">
-                                <Path Width="16" Height="16" Margin="0 -1 0 1" ClipToBounds="False" StrokeThickness="1" Stroke="Black" Fill="Black" Data="M13.5 1.5 10.5 3.5 10.5 7.5M7.5 7.5 4.5 10.5 9.5 15.5 15.5 9.5 13.5 7.5 11.5 9.5 9.5 9.5ZM4.5 7.5 3.5 7.5 1.5 9.5 1.5 12.5.5 13.5.5 15.5 3.5 15.5 4.5 14.5 6.5 14.5 5.5 13.5 4.5 13.5 3.5 12.5 2.5 11.5 2.5 9.5Z"></Path>
-                                <Path Width="16" Height="16" Margin="0 -1 0 1" ClipToBounds="False" StrokeThickness="1" Stroke="Black" Data="M7.5 7.5 L 10.5 4.5 13.5 7.5"></Path>
-                                                               
+                                <Path Width="16" Height="16" StrokeThickness="1" Margin="0" Stroke="Black" Fill="Transparent" Data="M2.5 2.5 h11 v11 h-11 z"></Path>
                             </Grid>
                         </ToggleButton>
-                        <ToggleButton ToolTip.Tip="Color Picker [k]" Tag="ColorPicker" IsCheckedChanged="ToggleButtonIsCheckedChanged" Padding="0" IsChecked="{Binding SelectedTool, Converter={StaticResource ToolTypeConverter}, ConverterParameter=ColorPicker}" Focusable="False">
-                            <Grid Width="16" Height="16">
-                                <Path Margin="0 0 0 0" UseLayoutRounding="False" Stroke="Black" StrokeJoin="Round"  StrokeThickness="1" Fill="Black" Width="16" Height="16"
-                                      Data="M13.5 0.5 14.5 0.5 15.5 1.5 15.5 2.5 13.5 4.5 13.5 6.5 12.5 7.5 8.5 3.5 9.5 2.5 11.5 2.5ZM8.5 6.5 9.5 6.5 9.5 7.5 1.5 15.5 0.5 14.5Z M 0.5 15.5 1.5 15.5 0.5 15.5Z" ></Path>
-                                <!-- <Path Stroke="#80000000" Data="M1.5 13.5 L 2.6 15.5" StrokeThickness="1"></Path> -->
-                                <!-- <Image Margin="0" Height="16" Source="/Assets/ColorPicker16.png"></Image> -->
-                            </Grid>
-                        </ToggleButton> 
                          
                         <ToggleButton IsVisible="False" ToolTip.Tip="Unused" Tag="Unused" Padding="0" Focusable="False">
                             <Grid UseLayoutRounding="False" Width="16" Height="16"> 
@@ -246,6 +252,30 @@
                                 <Grid VerticalAlignment="Center">
                                     <Image Width="24" Height="8" Source="/Assets/SharpLine.png"></Image>
                                 </Grid>
+                            </RadioButton>
+                        </StackPanel>
+                    </ClassicBorderDecorator>
+                    
+                    <ClassicBorderDecorator BorderThickness="1" BorderStyle="ThinPressed" HorizontalAlignment="Center" IsVisible="{Binding IsRectangleToolSelected}" Margin="0 2 0 0">
+                        <StackPanel>
+                            <RadioButton Margin="4 2" IsChecked="{Binding RectangleMode, Converter={x:Static pixelEditor:EnumToIsCheckedConverter.Instance}, ConverterParameter={x:Static vm:RectangleMode.BorderAndFill}}"
+                                         FontSize="10">
+                                <Border BorderThickness="1" Width="24" Height="8" VerticalAlignment="Center">
+                                    <Border.BorderBrush><SolidColorBrush Color="{Binding PrimaryColor}"></SolidColorBrush></Border.BorderBrush>
+                                    <Border.Background><SolidColorBrush Color="{Binding SecondaryColor}"></SolidColorBrush></Border.Background>
+                                </Border>
+                            </RadioButton>
+                            <RadioButton Margin="4 2" IsChecked="{Binding RectangleMode, Converter={x:Static pixelEditor:EnumToIsCheckedConverter.Instance}, ConverterParameter={x:Static vm:RectangleMode.BorderOnly}}"
+                                         FontSize="10">
+                                <Border Background="{StaticResource BgBrush}" BorderThickness="1" Width="24" Height="8" VerticalAlignment="Center">
+                                    <Border.BorderBrush><SolidColorBrush Color="{Binding PrimaryColor}"></SolidColorBrush></Border.BorderBrush> 
+                                </Border>
+                            </RadioButton>
+                            <RadioButton Margin="4 2" IsChecked="{Binding RectangleMode, Converter={x:Static pixelEditor:EnumToIsCheckedConverter.Instance}, ConverterParameter={x:Static vm:RectangleMode.FillOnly}}"
+                                         FontSize="10">
+                                <Border BorderThickness="0" Width="24" Height="8" VerticalAlignment="Center">
+                                    <Border.Background><SolidColorBrush Color="{Binding PrimaryColor}"></SolidColorBrush></Border.Background>
+                                </Border>
                             </RadioButton>
                         </StackPanel>
                     </ClassicBorderDecorator>

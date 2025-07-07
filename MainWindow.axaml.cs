@@ -148,6 +148,12 @@ namespace PixelEditor
                         _isSelecting = true;
                         break;
                         
+                    case ToolType.Rectangle:
+                        ViewModel.RectangleStartCommand.Execute(new PixelEventArgs(x, y, isLeftButton, _lastMouseDownColor, isCtrlPressed, isAltPressed));
+                        _selectionStart = adjustedPoint;
+                        _isSelecting = true;
+                        break;
+                        
                     default:
                         // Drawing tools (Pencil, Fill, Eraser)
                         ViewModel.DrawPixelCommand.Execute(new PixelEventArgs(x, y, isLeftButton, _lastMouseDownColor));
@@ -217,6 +223,11 @@ namespace PixelEditor
                     bool isLeftButton = point.Properties.IsLeftButtonPressed;
                     ViewModel.LineUpdateCommand.Execute(new PixelEventArgs(x, y, isLeftButton, _lastMouseDownColor));
                 }
+                else if (_isSelecting && ViewModel.SelectedTool == ToolType.Rectangle)
+                {
+                    bool isLeftButton = point.Properties.IsLeftButtonPressed;
+                    ViewModel.RectangleUpdateCommand.Execute(new PixelEventArgs(x, y, isLeftButton, _lastMouseDownColor));
+                }
                 else
                 {
                     ViewModel.UpdatePositionCommand.Execute(new PixelEventArgs(x, y, point.Properties.IsLeftButtonPressed, _lastMouseDownColor));
@@ -285,6 +296,18 @@ namespace PixelEditor
                 
                 bool isLeftButton = e.InitialPressMouseButton == MouseButton.Left;
                 ViewModel.LineEndCommand.Execute(new PixelEventArgs(x, y, isLeftButton, _lastMouseDownColor));
+                
+                _isSelecting = false;
+            }
+            else if (_isSelecting && ViewModel.SelectedTool == ToolType.Rectangle)
+            {
+                var point = e.GetCurrentPoint(ImageCanvas);
+                Point adjustedPoint = GetImageCoordinates(point.Position);
+                int x = (int)adjustedPoint.X;
+                int y = (int)adjustedPoint.Y;
+                
+                bool isLeftButton = e.InitialPressMouseButton == MouseButton.Left;
+                ViewModel.RectangleEndCommand.Execute(new PixelEventArgs(x, y, isLeftButton, _lastMouseDownColor));
                 
                 _isSelecting = false;
             }
@@ -616,6 +639,10 @@ namespace PixelEditor
                     break;
                 case Key.L:
                     ViewModel.SelectLineTool();
+                    e.Handled = true;
+                    break;
+                case Key.R:
+                    ViewModel.SelectRectangleTool();
                     e.Handled = true;
                     break;
                 case Key.X:

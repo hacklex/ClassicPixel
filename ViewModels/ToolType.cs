@@ -4,6 +4,7 @@ namespace PixelEditor.ViewModels
     {
         Pencil,
         StraightLine,
+        Rectangle,
         Selection,
         MagicWand,
         Fill,

@@ -653,5 +653,106 @@ namespace PixelEditor
                 }
             }
         }
+
+        public void DrawRectangle(int x1, int y1, int x2, int y2, Color borderColor, Color fillColor, bool drawBorder, bool drawFill)
+        {
+            // Normalize coordinates
+            int left = Math.Min(x1, x2);
+            int top = Math.Min(y1, y2);
+            int right = Math.Max(x1, x2);
+            int bottom = Math.Max(y1, y2);
+            
+            // Draw fill first (if enabled)
+            if (drawFill)
+            {
+                for (int x = left; x <= right; x++)
+                {
+                    for (int y = top; y <= bottom; y++)
+                    {
+                        DrawPixel(x, y, fillColor);
+                    }
+                }
+            }
+            
+            // Draw border (if enabled)
+            if (drawBorder)
+            {
+                // Top and bottom edges
+                for (int x = left; x <= right; x++)
+                {
+                    DrawPixel(x, top, borderColor);
+                    DrawPixel(x, bottom, borderColor);
+                }
+                
+                // Left and right edges
+                for (int y = top; y <= bottom; y++)
+                {
+                    DrawPixel(left, y, borderColor);
+                    DrawPixel(right, y, borderColor);
+                }
+            }
+        }
+        
+        public void PreviewRectangle(int x1, int y1, int x2, int y2, Color borderColor, Color fillColor, bool drawBorder, bool drawFill)
+        {
+            // Clear previous preview first
+            ClearPreview();
+            
+            // Normalize coordinates
+            int left = Math.Min(x1, x2);
+            int top = Math.Min(y1, y2);
+            int right = Math.Max(x1, x2);
+            int bottom = Math.Max(y1, y2);
+            
+            // Draw fill first (if enabled)
+            if (drawFill)
+            {
+                for (int x = left; x <= right; x++)
+                {
+                    for (int y = top; y <= bottom; y++)
+                    {
+                        if (x >= 0 && x < Width && y >= 0 && y < Height)
+                        {
+                            byte alpha = Math.Min((byte)128, fillColor.A);
+                            _previewLayer[x, y] = Color.FromArgb(alpha, fillColor.R, fillColor.G, fillColor.B);
+                        }
+                    }
+                }
+            }
+            
+            // Draw border (if enabled)
+            if (drawBorder)
+            {
+                // Top and bottom edges
+                for (int x = left; x <= right; x++)
+                {
+                    if (x >= 0 && x < Width && top >= 0 && top < Height)
+                    {
+                        byte alpha = Math.Min((byte)128, borderColor.A);
+                        _previewLayer[x, top] = Color.FromArgb(alpha, borderColor.R, borderColor.G, borderColor.B);
+                    }
+                    if (x >= 0 && x < Width && bottom >= 0 && bottom < Height)
+                    {
+                        byte alpha = Math.Min((byte)128, borderColor.A);
+                        _previewLayer[x, bottom] = Color.FromArgb(alpha, borderColor.R, borderColor.G, borderColor.B);
+                    }
+                }
+                
+                // Left and right edges
+                for (int y = top; y <= bottom; y++)
+                {
+                    if (left >= 0 && left < Width && y >= 0 && y < Height)
+                    {
+                        byte alpha = Math.Min((byte)128, borderColor.A);
+                        _previewLayer[left, y] = Color.FromArgb(alpha, borderColor.R, borderColor.G, borderColor.B);
+                    }
+                    if (right >= 0 && right < Width && y >= 0 && y < Height)
+                    {
+                        byte alpha = Math.Min((byte)128, borderColor.A);
+                        _previewLayer[right, y] = Color.FromArgb(alpha, borderColor.R, borderColor.G, borderColor.B);
+                    }
+                }
+            }
+        }
     }
 }

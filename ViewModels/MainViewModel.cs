@@ -19,6 +19,7 @@ namespace PixelEditor.ViewModels
         [ObservableProperty] private Color _secondaryColor = Colors.White;
         
         [ObservableProperty] private ToolType _selectedTool = ToolType.Pencil;
+        [ObservableProperty] private RectangleMode _rectangleMode = RectangleMode.BorderAndFill;
         
         [ObservableProperty] private string _statusText = "Ready";
         [ObservableProperty] private string _positionText = "Position: 0, 0";
@@ -48,6 +49,7 @@ namespace PixelEditor.ViewModels
             {
                 OnPropertyChanged(nameof(IsToleranceSetupVisible));
                 OnPropertyChanged(nameof(IsLineToolSelected));
+                OnPropertyChanged(nameof(IsRectangleToolSelected));
             }
         }
         
@@ -59,6 +61,7 @@ namespace PixelEditor.ViewModels
         public bool IsEraserToolSelected => SelectedTool == ToolType.Eraser;
         public bool IsColorPickerToolSelected => SelectedTool == ToolType.ColorPicker;
         public bool IsLineToolSelected => SelectedTool == ToolType.StraightLine;
+        public bool IsRectangleToolSelected => SelectedTool == ToolType.Rectangle;
        
         public List<(int startX, int startY, int endX, int endY)> SelectionRegions { get; private set; } = [];
 
@@ -79,6 +82,9 @@ namespace PixelEditor.ViewModels
         public ICommand LineStartCommand { get; }
         public ICommand LineUpdateCommand { get; }
         public ICommand LineEndCommand { get; }
+        public ICommand RectangleStartCommand { get; }
+        public ICommand RectangleUpdateCommand { get; }
+        public ICommand RectangleEndCommand { get; }
         
         public MainViewModel()
         {
@@ -98,6 +104,9 @@ namespace PixelEditor.ViewModels
             LineStartCommand = new RelayCommand(OnLineStart);
             LineUpdateCommand = new RelayCommand(OnLineUpdate);
             LineEndCommand = new RelayCommand(OnLineEnd);
+            RectangleStartCommand = new RelayCommand(OnRectangleStart);
+            RectangleUpdateCommand = new RelayCommand(OnRectangleUpdate);
+            RectangleEndCommand = new RelayCommand(OnRectangleEnd);
             AddCurrentColorCommand = new RelayCommand(_ => ColorPaletteViewModel.AddColor(PrimaryColor));
             ColorPaletteViewModel.ColorSelected += OnColorSelected;
             UpdateCanvasBitmap();
@@ -855,10 +864,161 @@ namespace PixelEditor.ViewModels
             }
         }
         
+        // Rectangle tool event handlers
+        private void OnRectangleStart(object? parameter)
+        {
+            if (IsRectangleToolSelected && parameter is PixelEventArgs args)
+            {
+                // Convert screen coordinates to canvas coordinates
+                int canvasX = args.X;
+                int canvasY = args.Y;
+                
+                // Store rectangle start coordinates
+                SelectionStartX = canvasX;
+                SelectionStartY = canvasY;
+                
+                // Also set end coordinates to same position initially
+                SelectionEndX = canvasX;
+                SelectionEndY = canvasY;
+                
+                StatusText = "Rectangle started - drag to set end point";
+            }
+        }
+        
+        private void OnRectangleUpdate(object? parameter)
+        {
+            if (IsRectangleToolSelected && parameter is PixelEventArgs args)
+            {
+                // Convert screen coordinates to canvas coordinates
+                int canvasX = args.X;
+                int canvasY = args.Y;
+                
+                // Update end coordinates
+                SelectionEndX = canvasX;
+                SelectionEndY = canvasY;
+                
+                // Clear previous preview and show rectangle preview
+                _pixelEditor.ClearPreview();
+                
+                // Determine colors and drawing mode based on button and rectangle mode
+                Color borderColor, fillColor;
+                bool drawBorder, drawFill;
+                
+                if (args.IsLeftButton)
+                {
+                    borderColor = PrimaryColor;
+                    fillColor = SecondaryColor;
+                }
+                else
+                {
+                    borderColor = SecondaryColor;
+                    fillColor = PrimaryColor;
+                }
+                
+                switch (RectangleMode)
+                {
+                    case RectangleMode.BorderAndFill:
+                        drawBorder = true;
+                        drawFill = true;
+                        break;
+                    case RectangleMode.BorderOnly:
+                        drawBorder = true;
+                        drawFill = false;
+                        break;
+                    case RectangleMode.FillOnly:
+                        drawBorder = false;
+                        drawFill = true;
+                        fillColor = borderColor; // Use border color for fill-only mode
+                        break;
+                    default:
+                        drawBorder = true;
+                        drawFill = false;
+                        break;
+                }
+                
+                _pixelEditor.PreviewRectangle(SelectionStartX, SelectionStartY, SelectionEndX, SelectionEndY, 
+                    borderColor, fillColor, drawBorder, drawFill);
+                
+                UpdateCanvasBitmap();
+                
+                int width = Math.Abs(SelectionEndX - SelectionStartX) + 1;
+                int height = Math.Abs(SelectionEndY - SelectionStartY) + 1;
+                StatusText = $"Rectangle: {width}x{height} ({RectangleMode})";
+            }
+        }
+        
+        private void OnRectangleEnd(object? parameter)
+        {
+            if (IsRectangleToolSelected && parameter is PixelEventArgs args)
+            {
+                // Convert screen coordinates to canvas coordinates
+                int canvasX = args.X;
+                int canvasY = args.Y;
+                
+                // Update final end coordinates
+                SelectionEndX = canvasX;
+                SelectionEndY = canvasY;
+                
+                // Clear preview and draw the actual rectangle
+                _pixelEditor.ClearPreview();
+                
+                // Determine colors and drawing mode based on button and rectangle mode
+                Color borderColor, fillColor;
+                bool drawBorder, drawFill;
+                
+                if (args.IsLeftButton)
+                {
+                    borderColor = PrimaryColor;
+                    fillColor = SecondaryColor;
+                }
+                else
+                {
+                    borderColor = SecondaryColor;
+                    fillColor = PrimaryColor;
+                }
+                
+                switch (RectangleMode)
+                {
+                    case RectangleMode.BorderAndFill:
+                        drawBorder = true;
+                        drawFill = true;
+                        break;
+                    case RectangleMode.BorderOnly:
+                        drawBorder = true;
+                        drawFill = false;
+                        break;
+                    case RectangleMode.FillOnly:
+                        drawBorder = false;
+                        drawFill = true;
+                        fillColor = borderColor; // Use border color for fill-only mode
+                        break;
+                    default:
+                        drawBorder = true;
+                        drawFill = false;
+                        break;
+                }
+                
+                _pixelEditor.DrawRectangle(SelectionStartX, SelectionStartY, SelectionEndX, SelectionEndY, 
+                    borderColor, fillColor, drawBorder, drawFill);
+                
+                UpdateCanvasBitmap();
+                
+                int width = Math.Abs(SelectionEndX - SelectionStartX) + 1;
+                int height = Math.Abs(SelectionEndY - SelectionStartY) + 1;
+                StatusText = $"Rectangle drawn: {width}x{height} ({RectangleMode})";
+            }
+        }
+        
         public void SelectLineTool()
         {
             SelectedTool = ToolType.StraightLine;
-            StatusText = "Straight Line Tool [l] - Click and drag to draw lines";
+            StatusText = "Line Tool [l]";
+        }
+
+        public void SelectRectangleTool()
+        {
+            SelectedTool = ToolType.Rectangle;
+            StatusText = "Rectangle Tool [r] - Click and drag to draw rectangles";
         }
     }
 }
