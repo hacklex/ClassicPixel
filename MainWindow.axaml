@@ -149,7 +149,7 @@
                         <pixelEditor:ColorPaletteControl DataContext="{Binding ColorPaletteViewModel}" Height="34"/>
                     </StackPanel>
                 </Grid>
-                <TextBox IsVisible="True" DockPanel.Dock="Top" Text="{Binding Data, ElementName=UnusedToggle, Mode=OneWayToSource, Converter={x:Static pixelEditor:GeometryDataConverter.Instance}}"></TextBox>
+                <TextBox Height="24" IsVisible="False" DockPanel.Dock="Top" Text="{Binding Data, ElementName=UnusedToggle, Mode=OneWayToSource, Converter={x:Static pixelEditor:GeometryDataConverter.Instance}}"></TextBox>
                 <!-- Tools -->
                 <StackPanel Width="55" DockPanel.Dock="Left">
                     <WrapPanel HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 0 1 0">
@@ -166,18 +166,21 @@
                         <ToggleButton ToolTip.Tip="Selection [s]" Tag="Selection" IsCheckedChanged="ToggleButtonIsCheckedChanged" Padding="0" IsChecked="{Binding SelectedTool, Converter={StaticResource ToolTypeConverter}, ConverterParameter=Selection}" Focusable="False">
                             <Grid Width="16" Height="16">
                                 <!-- <Image Margin="0" Height="16" Source="/Assets/Selection16.png"></Image> -->
-                                <Path VerticalAlignment="Center" Width="16" Stretch="None" Height="16" ClipToBounds="False" StrokeThickness="1"  Margin="{OnPlatform Default='0 1 0 -1', macOS='0 0 0 0'}"  StrokeJoin="Miter" StrokeDashArray="2, 2" Data="M 1 2 h 13 v 12 h -13 z" Stroke="Black"></Path>
+                                <Path VerticalAlignment="Center" Width="16" Stretch="None" Height="16" ClipToBounds="False" StrokeThickness="1"  Margin="{OnPlatform Default='1 0 -1 0', macOS='0 0 0 0'}"  StrokeJoin="Miter" StrokeDashArray="2, 2" Data="M 1 2 h 13 v 12 h -13 z" Stroke="Black"></Path>
                             </Grid>
                         </ToggleButton>
                         <ToggleButton ToolTip.Tip="Magic Wand [s,s]" Tag="MagicWand" IsCheckedChanged="ToggleButtonIsCheckedChanged" Padding="0" IsChecked="{Binding SelectedTool, Converter={StaticResource ToolTypeConverter}, ConverterParameter=MagicWand}" Focusable="False">
                             <Grid Width="16" Height="16">
-                                <Path Width="16" Stretch="None" Height="16" StrokeThickness="1" Margin="1 1 0 0" StrokeJoin="Miter" StrokeDashArray="1, 1" Data="M 8.5 0.5 h4 v4 h2 v3 h1 v5 h-2 v-1 h-1 v-1 h-4 z" Stroke="Black"></Path>
-                                <Path Width="16" Height="16" Margin="0" ClipToBounds="False" StrokeThickness="1" Stroke="Black" 
+                                <Path VerticalAlignment="Top" HorizontalAlignment="Left" Width="16" Stretch="None" Height="16" StrokeThickness="1" Margin="1 1 0 0" StrokeJoin="Miter" StrokeDashArray="1, 1" Data="M 8.5 0.5 h4 v4 h2 v3 h1 v5 h-2 v-1 h-1 v-1 h-4 z" Stroke="Black"></Path>
+                                <Path HorizontalAlignment="Left" Width="16" Height="16" Margin="0" ClipToBounds="False" StrokeThickness="1" Stroke="Black" 
                                       Fill="Black" 
                                       Data="M 2.5 11.5 l 4 4 3 0 -4 -4 z"></Path>
-                                <Path Width="16" Stretch="None" Height="16" StrokeThickness="1" Margin="0" StrokeJoin="Miter" Data="M2.5 11.5 l 3 0 -3 -3 -1 0 -1 1 z" Stroke="Black" Fill="White"></Path> 
-                                <Path Width="16" Stretch="None" Height="16" StrokeThickness="1" Margin="0" StrokeJoin="Miter" 
-                                      Data="M3.5 0.5 l 0 2 m 1 1 l 2 0 m -3 1 l 0 2 m -1 -3 l -2 0" Stroke="Black" ></Path>
+                                <Path VerticalAlignment="Top" HorizontalAlignment="Left" Width="16" Stretch="None" Height="16" StrokeThickness="1" Margin="0" StrokeJoin="Miter" Data="M2.5 11.5 l 3 0 -3 -3 -1 0 -1 1 z" Stroke="Black" Fill="White"></Path>
+                                <Line VerticalAlignment="Top" HorizontalAlignment="Left" StartPoint="3.5 0.5" EndPoint="3.5 7.5" Width="16" Height="16" StrokeThickness="1" StrokeJoin="Miter" Stroke="Black"></Line>
+                                <Line VerticalAlignment="Top" HorizontalAlignment="Left" StartPoint="0.5 3.5" EndPoint="7.5 3.5" Width="16" Height="16" StrokeThickness="1" StrokeJoin="Miter" Stroke="Black"></Line>
+                                <Rectangle HorizontalAlignment="Left" VerticalAlignment="Top" Width="1" Height="1" Fill="White" Margin="3 3" StrokeThickness="0" Stroke="White" ></Rectangle>
+                                <!-- <Path Width="16" Stretch="None" Height="16" StrokeThickness="1" Margin="0" StrokeJoin="Miter"  -->
+                                <!--       Data="M3.5 1.5 l 0 2 m 1 0 l 2 0 m -3 1 l 0 2 m -1 -3 l -2 0" Stroke="Black" ></Path> -->
                                 <!-- <Image Source="/Assets/MagicWand16.png"></Image> -->
                             </Grid>
                         </ToggleButton>
@@ -218,11 +221,11 @@
                             </Grid>
                         </ToggleButton> 
                          
-                        <ToggleButton IsVisible="True" ToolTip.Tip="Unused" Tag="Unused" Padding="0" Focusable="False">
+                        <ToggleButton IsVisible="False" ToolTip.Tip="Unused" Tag="Unused" Padding="0" Focusable="False">
                             <Grid UseLayoutRounding="False" Width="16" Height="16"> 
                                 <!-- <Path Stroke="#80000000" Data="M1.5 13.5 L 2.6 15.5" StrokeThickness="1"></Path> -->
                                 <!-- <Image Margin="0" Height="16" Source="/Assets/ColorPicker16.png"></Image> -->
-                                <Path x:Name="UnusedToggle" Margin="0 0 0 0" UseLayoutRounding="False" Stroke="Black" StrokeJoin="Round"  StrokeThickness="1" Fill="#808000" Width="16" Height="16"
+                                <Path x:Name="UnusedToggle" Margin="0 0 0 0" UseLayoutRounding="False" Stroke="Black" StrokeJoin="Miter"  StrokeThickness="1" Fill="#808000" Width="16" Height="16"
                                           Data="M13.5 0.5 14.5 0.5 15.5 1.5 15.5 2.5 13.5 4.5 13.5 6.5 12.5 7.5 8.5 3.5 9.5 2.5 11.5 2.5ZM8.5 6.5 9.5 6.5 9.5 7.5 1.5 15.5 0.5 14.5Z M 0.5 15.5 1.5 15.5 0.5 15.5" ></Path>
                             </Grid>
                         </ToggleButton> 
