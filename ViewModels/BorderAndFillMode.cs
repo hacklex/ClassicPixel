@@ -1,6 +1,6 @@
 namespace PixelEditor.ViewModels
 {
-    public enum RectangleMode
+    public enum BorderAndFillMode
     {
         BorderAndFill,
         BorderOnly,

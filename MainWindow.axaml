@@ -258,20 +258,20 @@
                     
                     <ClassicBorderDecorator BorderThickness="1" BorderStyle="ThinPressed" HorizontalAlignment="Center" IsVisible="{Binding IsRectangleToolSelected}" Margin="0 2 0 0">
                         <StackPanel>
-                            <RadioButton Margin="4 2" IsChecked="{Binding RectangleMode, Converter={x:Static pixelEditor:EnumToIsCheckedConverter.Instance}, ConverterParameter={x:Static vm:RectangleMode.BorderAndFill}}"
+                            <RadioButton Margin="4 2" IsChecked="{Binding BorderAndFillMode, Converter={x:Static pixelEditor:EnumToIsCheckedConverter.Instance}, ConverterParameter={x:Static vm:BorderAndFillMode.BorderAndFill}}"
                                          FontSize="10">
                                 <Border BorderThickness="1" Width="24" Height="8" VerticalAlignment="Center">
                                     <Border.BorderBrush><SolidColorBrush Color="{Binding PrimaryColor}"></SolidColorBrush></Border.BorderBrush>
                                     <Border.Background><SolidColorBrush Color="{Binding SecondaryColor}"></SolidColorBrush></Border.Background>
                                 </Border>
                             </RadioButton>
-                            <RadioButton Margin="4 2" IsChecked="{Binding RectangleMode, Converter={x:Static pixelEditor:EnumToIsCheckedConverter.Instance}, ConverterParameter={x:Static vm:RectangleMode.BorderOnly}}"
+                            <RadioButton Margin="4 2" IsChecked="{Binding BorderAndFillMode, Converter={x:Static pixelEditor:EnumToIsCheckedConverter.Instance}, ConverterParameter={x:Static vm:BorderAndFillMode.BorderOnly}}"
                                          FontSize="10">
                                 <Border Background="{StaticResource BgBrush}" BorderThickness="1" Width="24" Height="8" VerticalAlignment="Center">
                                     <Border.BorderBrush><SolidColorBrush Color="{Binding PrimaryColor}"></SolidColorBrush></Border.BorderBrush> 
                                 </Border>
                             </RadioButton>
-                            <RadioButton Margin="4 2" IsChecked="{Binding RectangleMode, Converter={x:Static pixelEditor:EnumToIsCheckedConverter.Instance}, ConverterParameter={x:Static vm:RectangleMode.FillOnly}}"
+                            <RadioButton Margin="4 2" IsChecked="{Binding BorderAndFillMode, Converter={x:Static pixelEditor:EnumToIsCheckedConverter.Instance}, ConverterParameter={x:Static vm:BorderAndFillMode.FillOnly}}"
                                          FontSize="10">
                                 <Border BorderThickness="0" Width="24" Height="8" VerticalAlignment="Center">
                                     <Border.Background><SolidColorBrush Color="{Binding PrimaryColor}"></SolidColorBrush></Border.Background>

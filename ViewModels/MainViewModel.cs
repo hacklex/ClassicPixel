@@ -19,7 +19,7 @@ namespace PixelEditor.ViewModels
         [ObservableProperty] private Color _secondaryColor = Colors.White;
         
         [ObservableProperty] private ToolType _selectedTool = ToolType.Pencil;
-        [ObservableProperty] private RectangleMode _rectangleMode = RectangleMode.BorderAndFill;
+        [ObservableProperty] private BorderAndFillMode _borderAndFillMode = BorderAndFillMode.BorderAndFill;
         
         [ObservableProperty] private string _statusText = "Ready";
         [ObservableProperty] private string _positionText = "Position: 0, 0";
@@ -915,17 +915,17 @@ namespace PixelEditor.ViewModels
                     fillColor = PrimaryColor;
                 }
                 
-                switch (RectangleMode)
+                switch (BorderAndFillMode)
                 {
-                    case RectangleMode.BorderAndFill:
+                    case BorderAndFillMode.BorderAndFill:
                         drawBorder = true;
                         drawFill = true;
                         break;
-                    case RectangleMode.BorderOnly:
+                    case BorderAndFillMode.BorderOnly:
                         drawBorder = true;
                         drawFill = false;
                         break;
-                    case RectangleMode.FillOnly:
+                    case BorderAndFillMode.FillOnly:
                         drawBorder = false;
                         drawFill = true;
                         fillColor = borderColor; // Use border color for fill-only mode
@@ -943,7 +943,7 @@ namespace PixelEditor.ViewModels
                 
                 int width = Math.Abs(SelectionEndX - SelectionStartX) + 1;
                 int height = Math.Abs(SelectionEndY - SelectionStartY) + 1;
-                StatusText = $"Rectangle: {width}x{height} ({RectangleMode})";
+                StatusText = $"Rectangle: {width}x{height} ({BorderAndFillMode})";
             }
         }
         
@@ -977,17 +977,17 @@ namespace PixelEditor.ViewModels
                     fillColor = PrimaryColor;
                 }
                 
-                switch (RectangleMode)
+                switch (BorderAndFillMode)
                 {
-                    case RectangleMode.BorderAndFill:
+                    case BorderAndFillMode.BorderAndFill:
                         drawBorder = true;
                         drawFill = true;
                         break;
-                    case RectangleMode.BorderOnly:
+                    case BorderAndFillMode.BorderOnly:
                         drawBorder = true;
                         drawFill = false;
                         break;
-                    case RectangleMode.FillOnly:
+                    case BorderAndFillMode.FillOnly:
                         drawBorder = false;
                         drawFill = true;
                         fillColor = borderColor; // Use border color for fill-only mode
@@ -1005,7 +1005,7 @@ namespace PixelEditor.ViewModels
                 
                 int width = Math.Abs(SelectionEndX - SelectionStartX) + 1;
                 int height = Math.Abs(SelectionEndY - SelectionStartY) + 1;
-                StatusText = $"Rectangle drawn: {width}x{height} ({RectangleMode})";
+                StatusText = $"Rectangle drawn: {width}x{height} ({BorderAndFillMode})";
             }
         }
         
