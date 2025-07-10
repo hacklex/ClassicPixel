@@ -68,7 +68,8 @@ namespace PixelEditor
             };
         }
 
-        private void MainWindow_Loaded(object? sender, RoutedEventArgs e) => CenterCanvas();
+        private void MainWindow_Loaded(object? sender, RoutedEventArgs e) => SetZoomFactorTo(8);
+
         private void MainWindow_SizeChanged(object? sender, SizeChangedEventArgs e) => CenterCanvas();
         private void CenterCanvas_Click(object? sender, RoutedEventArgs e) => CenterCanvas();
 
@@ -333,6 +334,22 @@ namespace PixelEditor
                 }
             }
         }
+
+        public void SetZoomFactorTo(int zoomFactor)
+        { 
+            if (ViewModel is null) return;
+            if (zoomFactor is < 1 or > 1024) return;
+            var size = ViewModel.PixelSize;
+            size = new(size.Width * zoomFactor, size.Height * zoomFactor);
+            EditorImage.Width = size.Width;
+            EditorImage.Height = size.Height; 
+            var x = (CanvasContainer.Bounds.Width - size.Width) / 2;
+            var y = (CanvasContainer.Bounds.Height - size.Height) / 2;
+            Canvas.SetLeft(EditorImage, x);
+            Canvas.SetTop(EditorImage, y); 
+        }
+        
+        private void ResetZoom_Click(object? sender, RoutedEventArgs e) => SetZoomFactorTo(1);
 
         private void CanvasContainer_PointerWheelChanged(object sender, PointerWheelEventArgs e)
         {

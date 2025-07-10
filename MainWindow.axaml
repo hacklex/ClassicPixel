@@ -104,6 +104,7 @@
                     </MenuItem>
                     <MenuItem Height="22" Header="View">
                         <MenuItem Header="Center Canvas" Click="CenterCanvas_Click" />
+                        <MenuItem Header="Reset Zoom" Click="ResetZoom_Click" />
                     </MenuItem>
                 </Menu>
             

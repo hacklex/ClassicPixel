@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
@@ -42,7 +43,9 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private bool _isBorderAndFillSettingsVisible;
     [ObservableProperty] private bool _isToleranceSetupVisible;
         
-    private PixelEditor _pixelEditor; 
+    private PixelEditor _pixelEditor;
+    
+    public PixelSize PixelSize => new(_pixelEditor.Width, _pixelEditor.Height);
 
     private bool ShouldShowToleranceSetup(ToolType currentTool) => currentTool is ToolType.MagicWand or ToolType.Eraser or ToolType.Fill;
         
