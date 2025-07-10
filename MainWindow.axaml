@@ -92,11 +92,11 @@
                             </Style>
                         </Menu.Styles>
                     <MenuItem Height="22" Header="File">
-                        <MenuItem Header="New" Command="{Binding NewCommand}"/>
-                        <MenuItem Header="Open" Command="{Binding OpenCommand}"/>
-                        <MenuItem Header="Save" Command="{Binding SaveCommand}"/>
+                        <MenuItem Header="New" Command="{Binding New}"/>
+                        <MenuItem Header="Open" Command="{Binding Open}"/>
+                        <MenuItem Header="Save" Command="{Binding Save}"/>
                         <Separator/>
-                        <MenuItem Header="Exit" Command="{Binding ExitCommand}"/>
+                        <MenuItem Header="Exit" Command="{Binding Exit}"/>
                     </MenuItem>
                     <MenuItem Height="22" Header="Palette">
                         <MenuItem Header="Reset to Default" Command="{Binding ColorPaletteViewModel.LoadDefaultColorsCommand}" />
@@ -222,10 +222,14 @@
                         
                         <ToggleButton ToolTip.Tip="Rectangle [r]" Tag="Rectangle" IsCheckedChanged="ToggleButtonIsCheckedChanged" Padding="0" IsChecked="{Binding SelectedTool, Converter={StaticResource ToolTypeConverter}, ConverterParameter=Rectangle}" Focusable="False">
                             <Grid Width="16" Height="16">
-                                <Path Width="16" Height="16" StrokeThickness="1" Margin="0" Stroke="Black" Fill="Transparent" Data="M2.5 2.5 h11 v11 h-11 z"></Path>
+                                <Rectangle Width="16" Height="14" Stroke="Black" Fill="White" StrokeThickness="1" Margin="0"/>
                             </Grid>
                         </ToggleButton>
-                         
+                        <ToggleButton ToolTip.Tip="Ellipse [o]" Tag="Ellipse" IsCheckedChanged="ToggleButtonIsCheckedChanged" Padding="0" IsChecked="{Binding SelectedTool, Converter={StaticResource ToolTypeConverter}, ConverterParameter=Ellipse}" Focusable="False">
+                            <Grid Width="16" Height="16">
+                                <Ellipse Width="16" Fill="White" Height="14" Stroke="Black" StrokeThickness="1" Margin="0"/>
+                            </Grid>
+                        </ToggleButton>
                         <ToggleButton IsVisible="False" ToolTip.Tip="Unused" Tag="Unused" Padding="0" Focusable="False">
                             <Grid UseLayoutRounding="False" Width="16" Height="16"> 
                                 <!-- <Path Stroke="#80000000" Data="M1.5 13.5 L 2.6 15.5" StrokeThickness="1"></Path> -->
@@ -241,7 +245,7 @@
                         <NumericUpDown Margin="2 0" Minimum="0" Maximum="765" Value="{Binding MagicWandTolerance}"></NumericUpDown>
                     </StackPanel>
                     
-                    <ClassicBorderDecorator BorderThickness="1" BorderStyle="ThinPressed" HorizontalAlignment="Center" IsVisible="{Binding IsLineToolSelected}" Margin="0 2 0 0">
+                    <ClassicBorderDecorator BorderThickness="1" BorderStyle="ThinPressed" HorizontalAlignment="Center" IsVisible="{Binding IsAntiAliasingSettingsVisible}" Margin="0 2 0 0">
                         <StackPanel>
                             <RadioButton Margin="4 1" IsChecked="{Binding IsAntialiasingEnabled}">
                                 <Grid VerticalAlignment="Center">
@@ -256,7 +260,7 @@
                         </StackPanel>
                     </ClassicBorderDecorator>
                     
-                    <ClassicBorderDecorator BorderThickness="1" BorderStyle="ThinPressed" HorizontalAlignment="Center" IsVisible="{Binding IsRectangleToolSelected}" Margin="0 2 0 0">
+                    <ClassicBorderDecorator BorderThickness="1" BorderStyle="ThinPressed" HorizontalAlignment="Center" IsVisible="{Binding IsBorderAndFillSettingsVisible}" Margin="0 2 0 0">
                         <StackPanel>
                             <RadioButton Margin="4 2" IsChecked="{Binding BorderAndFillMode, Converter={x:Static pixelEditor:EnumToIsCheckedConverter.Instance}, ConverterParameter={x:Static vm:BorderAndFillMode.BorderAndFill}}"
                                          FontSize="10">

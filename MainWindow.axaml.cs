@@ -90,7 +90,7 @@ namespace PixelEditor
             // If the middle mouse button is pressed or Alt+Left button for canvas dragging
             if (point.Properties.IsMiddleButtonPressed || 
                 (point.Properties.IsLeftButtonPressed && e.KeyModifiers.HasFlag(KeyModifiers.Alt) && 
-                 !ViewModel.IsSelectionToolSelected && !ViewModel.IsMagicWandToolSelected))
+                 ViewModel.SelectedTool is not (ToolType.Selection or ToolType.MagicWand)))
             {
                 _isDragging = true;
                 _lastPosition = e.GetPosition(CanvasContainer);
@@ -116,18 +116,12 @@ namespace PixelEditor
                         ViewModel.SelectionStartCommand.Execute(new PixelEventArgs(x, y, isLeftButton, _lastMouseDownColor, isCtrlPressed, isAltPressed));
                         _selectionStart = adjustedPoint;
                         _isSelecting = true;
-                        
-                        // Initialize the selection overlay when starting selection
                         UpdateSelectionOverlay(EditorImage.Bounds.Width, EditorImage.Bounds.Height);
                         break;
-                        
                     case ToolType.MagicWand:
                         ViewModel.MagicWandSelectCommand.Execute(new PixelEventArgs(x, y, isLeftButton, _lastMouseDownColor, isCtrlPressed, isAltPressed));
-                        
-                        // Update the selection overlay for magic wand selection
                         UpdateSelectionOverlay(EditorImage.Bounds.Width, EditorImage.Bounds.Height);
                         break;
-                        
                     case ToolType.ColorPicker:
                         Color pickedColor = ViewModel.GetPixelColor(x, y);
                         if (isLeftButton)
@@ -141,21 +135,22 @@ namespace PixelEditor
                             ViewModel.StatusText = $"Secondary color set to: {pickedColor}";
                         }
                         break;
-                        
                     case ToolType.StraightLine:
                         ViewModel.LineStartCommand.Execute(new PixelEventArgs(x, y, isLeftButton, _lastMouseDownColor, isCtrlPressed, isAltPressed));
                         _selectionStart = adjustedPoint;
                         _isSelecting = true;
                         break;
-                        
                     case ToolType.Rectangle:
                         ViewModel.RectangleStartCommand.Execute(new PixelEventArgs(x, y, isLeftButton, _lastMouseDownColor, isCtrlPressed, isAltPressed));
                         _selectionStart = adjustedPoint;
                         _isSelecting = true;
                         break;
-                        
+                    case ToolType.Ellipse:
+                        ViewModel.EllipseStartCommand.Execute(new PixelEventArgs(x, y, isLeftButton, _lastMouseDownColor, isCtrlPressed, isAltPressed));
+                        _selectionStart = adjustedPoint;
+                        _isSelecting = true;
+                        break;
                     default:
-                        // Drawing tools (Pencil, Fill, Eraser)
                         ViewModel.DrawPixelCommand.Execute(new PixelEventArgs(x, y, isLeftButton, _lastMouseDownColor));
                         break;
                 }
@@ -228,6 +223,11 @@ namespace PixelEditor
                     bool isLeftButton = point.Properties.IsLeftButtonPressed;
                     ViewModel.RectangleUpdateCommand.Execute(new PixelEventArgs(x, y, isLeftButton, _lastMouseDownColor));
                 }
+                else if (_isSelecting && ViewModel.SelectedTool == ToolType.Ellipse)
+                {
+                    bool isLeftButton = point.Properties.IsLeftButtonPressed;
+                    ViewModel.EllipseUpdateCommand.Execute(new PixelEventArgs(x, y, isLeftButton, _lastMouseDownColor));
+                }
                 else
                 {
                     ViewModel.UpdatePositionCommand.Execute(new PixelEventArgs(x, y, point.Properties.IsLeftButtonPressed, _lastMouseDownColor));
@@ -293,10 +293,8 @@ namespace PixelEditor
                 Point adjustedPoint = GetImageCoordinates(point.Position);
                 int x = (int)adjustedPoint.X;
                 int y = (int)adjustedPoint.Y;
-                
                 bool isLeftButton = e.InitialPressMouseButton == MouseButton.Left;
                 ViewModel.LineEndCommand.Execute(new PixelEventArgs(x, y, isLeftButton, _lastMouseDownColor));
-                
                 _isSelecting = false;
             }
             else if (_isSelecting && ViewModel.SelectedTool == ToolType.Rectangle)
@@ -305,10 +303,18 @@ namespace PixelEditor
                 Point adjustedPoint = GetImageCoordinates(point.Position);
                 int x = (int)adjustedPoint.X;
                 int y = (int)adjustedPoint.Y;
-                
                 bool isLeftButton = e.InitialPressMouseButton == MouseButton.Left;
                 ViewModel.RectangleEndCommand.Execute(new PixelEventArgs(x, y, isLeftButton, _lastMouseDownColor));
-                
+                _isSelecting = false;
+            }
+            else if (_isSelecting && ViewModel.SelectedTool == ToolType.Ellipse)
+            {
+                var point = e.GetCurrentPoint(ImageCanvas);
+                Point adjustedPoint = GetImageCoordinates(point.Position);
+                int x = (int)adjustedPoint.X;
+                int y = (int)adjustedPoint.Y;
+                bool isLeftButton = e.InitialPressMouseButton == MouseButton.Left;
+                ViewModel.EllipseEndCommand.Execute(new PixelEventArgs(x, y, isLeftButton, _lastMouseDownColor));
                 _isSelecting = false;
             }
             else
@@ -621,6 +627,14 @@ namespace PixelEditor
 
             switch (e.Key)
             {
+                case Key.A:
+                    if (e.KeyModifiers == KeyModifiers.Control)
+                    {
+                        ViewModel.SelectAll();
+                        e.Handled = true;
+                        UpdateSelectionOverlay(EditorImage.Bounds.Width, EditorImage.Bounds.Height);
+                    }
+                    break;
                 case Key.S:
                     ViewModel.CycleSelectionTools();
                     e.Handled = true;
@@ -643,6 +657,10 @@ namespace PixelEditor
                     break;
                 case Key.R:
                     ViewModel.SelectRectangleTool();
+                    e.Handled = true;
+                    break;
+                case Key.O:
+                    ViewModel.CycleRectangleEllipseTools();
                     e.Handled = true;
                     break;
                 case Key.X:

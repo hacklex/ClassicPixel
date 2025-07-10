@@ -14,7 +14,7 @@ public class EnumToIsCheckedConverter : IValueConverter
         if (value is null) return AvaloniaProperty.UnsetValue;
         var valueType = value.GetType();
         if (!valueType.IsEnum) return AvaloniaProperty.UnsetValue;
-        if (parameter?.GetType() == targetType) return Equals(value, parameter);
+        if (parameter?.GetType() == value.GetType()) return Equals(value, parameter);
         if (parameter is not string enumValueString) return AvaloniaProperty.UnsetValue;
         return Enum.TryParse(valueType, enumValueString, false, out object? result) 
             ? Equals(result, value)

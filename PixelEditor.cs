@@ -1,27 +1,25 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Avalonia;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
-using System.Linq;
+using SkiaSharp;
 
 namespace PixelEditor
 {
     public class PixelEditor
     {
         private Color[,] _pixels;
-        private Color[,]? _previewLayer;
-        private int _animationFrame = 0;
-        private int _selectionLeft, _selectionTop, _selectionRight, _selectionBottom;
+        private readonly Color[,] _previewLayer;
 
         public int Width { get; private set; }
         public int Height { get; private set; }
 
-        // Indicates whether the preview layer is currently being used
-        public bool HasPreview => _previewLayer != null;
-
+        public bool IsWithinBounds(int x, int y) => x >= 0 && x < Width && y >= 0 && y < Height;
+        
         public PixelEditor(int width, int height)
         {
             Width = width;
@@ -41,13 +39,8 @@ namespace PixelEditor
             }
         }
 
-        public void DrawPixel(int x, int y, Color color)
-        {
-            if (x >= 0 && x < Width && y >= 0 && y < Height)
-            {
-                _pixels[x, y] = color;
-            }
-        }
+        public bool WritePixel(int x, int y, Color color) => IsWithinBounds(x,y) && (_pixels[x,y] = color) == color;
+        public Color? ReadPixel(int x, int y) => IsWithinBounds(x, y) ? _pixels[x, y] : null;
 
         public void FloodFill(int x, int y, Color fillColor)
         {
@@ -84,87 +77,6 @@ namespace PixelEditor
             }
         }
 
-        public void EraseSimilarPixels(int x, int y, int tolerance)
-        {
-            if (x < 0 || x >= Width || y < 0 || y >= Height)
-                return;
-
-            Color targetColor = _pixels[x, y];
-            Color transparentColor = Color.FromArgb(0, 255, 255, 255);
-
-            // Don't erase if already transparent
-            if (targetColor.A == 0)
-                return;
-
-            Stack<Point> pixels = new Stack<Point>();
-            pixels.Push(new Point(x, y));
-
-            while (pixels.Count > 0)
-            {
-                Point current = pixels.Pop();
-                int cx = (int)current.X;
-                int cy = (int)current.Y;
-
-                if (cx < 0 || cx >= Width || cy < 0 || cy >= Height)
-                    continue;
-
-                // Only erase if color is similar to the target color
-                if (!IsColorSimilar(_pixels[cx, cy], targetColor, tolerance))
-                    continue;
-
-                // Don't process already erased pixels
-                if (_pixels[cx, cy].A == 0)
-                    continue;
-
-                _pixels[cx, cy] = transparentColor;
-
-                pixels.Push(new Point(cx + 1, cy));
-                pixels.Push(new Point(cx - 1, cy));
-                pixels.Push(new Point(cx, cy + 1));
-                pixels.Push(new Point(cx, cy - 1));
-            }
-        }
-
-        public void ReplaceSimilarColors(int x, int y, Color replacementColor, int tolerance)
-        {
-            if (x < 0 || x >= Width || y < 0 || y >= Height)
-                return;
-
-            Color targetColor = _pixels[x, y];
-
-            // Don't replace if colors are identical
-            if (targetColor.Equals(replacementColor))
-                return;
-
-            Stack<Point> pixels = new Stack<Point>();
-            pixels.Push(new Point(x, y));
-
-            while (pixels.Count > 0)
-            {
-                Point current = pixels.Pop();
-                int cx = (int)current.X;
-                int cy = (int)current.Y;
-
-                if (cx < 0 || cx >= Width || cy < 0 || cy >= Height)
-                    continue;
-
-                // Only replace if color is similar to the target color
-                if (!IsColorSimilar(_pixels[cx, cy], targetColor, tolerance))
-                    continue;
-
-                // Don't process already replaced pixels
-                if (_pixels[cx, cy].Equals(replacementColor))
-                    continue;
-
-                _pixels[cx, cy] = replacementColor;
-
-                pixels.Push(new Point(cx + 1, cy));
-                pixels.Push(new Point(cx - 1, cy));
-                pixels.Push(new Point(cx, cy + 1));
-                pixels.Push(new Point(cx, cy - 1));
-            }
-        }
-
         public HashSet<(int x, int y)> MagicWandSelect(int x, int y, int tolerance = 32)
         {
             if (x < 0 || x >= Width || y < 0 || y >= Height)
@@ -187,7 +99,7 @@ namespace PixelEditor
                     continue;
 
                 // Check if the color is similar enough to the target color
-                if (IsColorSimilar(_pixels[cx, cy], targetColor, tolerance))
+                if (_pixels[cx, cy].IsSimilarTo(targetColor, tolerance))
                 {
                     selectedPixels.Add((cx, cy));
 
@@ -200,16 +112,6 @@ namespace PixelEditor
             }
 
             return selectedPixels;
-        }
-
-        public Color GetPixelColor(int x, int y)
-        {
-            if (x >= 0 && x < Width && y >= 0 && y < Height)
-            {
-                return _pixels[x, y];
-            }
-
-            return Color.FromArgb(0, 0, 0, 0); // Return transparent black for out of bounds
         }
 
         public void DrawLine(int x0, int y0, int x1, int y1, Color color, bool antialiased = false)
@@ -253,7 +155,7 @@ namespace PixelEditor
 
             while (true)
             {
-                DrawPixel(x, y, color);
+                WritePixel(x, y, color);
 
                 if (x == x1 && y == y1) break;
 
@@ -334,58 +236,58 @@ namespace PixelEditor
             float gradient = dy / dx;
 
             // Handle first endpoint
-            int xend = x0;
-            float yend = y0 + gradient * (xend - x0);
-            float xgap = 1.0f - ((x0 + 0.5f) - (float)Math.Floor(x0 + 0.5f));
-            int xpxl1 = xend;
-            int ypxl1 = (int)Math.Floor(yend);
+            int xEnd = x0;
+            float yEnd = y0 + gradient * (xEnd - x0);
+            float xGap = 1.0f - ((x0 + 0.5f) - (float)Math.Floor(x0 + 0.5f));
+            int xPxl1 = xEnd;
+            int yPxl1 = (int)Math.Floor(yEnd);
 
             if (steep)
             {
-                PlotAntialiased(ypxl1, xpxl1, color, (1.0f - (yend - Math.Floor(yend))) * xgap);
-                PlotAntialiased(ypxl1 + 1, xpxl1, color, (yend - Math.Floor(yend)) * xgap);
+                PlotAntialiased(yPxl1, xPxl1, color, (1.0f - (yEnd - Math.Floor(yEnd))) * xGap);
+                PlotAntialiased(yPxl1 + 1, xPxl1, color, (yEnd - Math.Floor(yEnd)) * xGap);
             }
             else
             {
-                PlotAntialiased(xpxl1, ypxl1, color, (1.0f - (yend - Math.Floor(yend))) * xgap);
-                PlotAntialiased(xpxl1, ypxl1 + 1, color, (yend - Math.Floor(yend)) * xgap);
+                PlotAntialiased(xPxl1, yPxl1, color, (1.0f - (yEnd - Math.Floor(yEnd))) * xGap);
+                PlotAntialiased(xPxl1, yPxl1 + 1, color, (yEnd - Math.Floor(yEnd)) * xGap);
             }
 
-            float intery = yend + gradient;
+            float interY = yEnd + gradient;
 
             // Handle second endpoint
-            xend = x1;
-            yend = y1 + gradient * (xend - x1);
-            xgap = (x1 + 0.5f) - (float)Math.Floor(x1 + 0.5f);
-            int xpxl2 = xend;
-            int ypxl2 = (int)Math.Floor(yend);
+            xEnd = x1;
+            yEnd = y1 + gradient * (xEnd - x1);
+            xGap = (x1 + 0.5f) - (float)Math.Floor(x1 + 0.5f);
+            int xPxl2 = xEnd;
+            int yPxl2 = (int)Math.Floor(yEnd);
 
             if (steep)
             {
-                PlotAntialiased(ypxl2, xpxl2, color, (1.0f - (yend - Math.Floor(yend))) * xgap);
-                PlotAntialiased(ypxl2 + 1, xpxl2, color, (yend - Math.Floor(yend)) * xgap);
+                PlotAntialiased(yPxl2, xPxl2, color, (1.0f - (yEnd - Math.Floor(yEnd))) * xGap);
+                PlotAntialiased(yPxl2 + 1, xPxl2, color, (yEnd - Math.Floor(yEnd)) * xGap);
             }
             else
             {
-                PlotAntialiased(xpxl2, ypxl2, color, (1.0f - (yend - Math.Floor(yend))) * xgap);
-                PlotAntialiased(xpxl2, ypxl2 + 1, color, (yend - Math.Floor(yend)) * xgap);
+                PlotAntialiased(xPxl2, yPxl2, color, (1.0f - (yEnd - Math.Floor(yEnd))) * xGap);
+                PlotAntialiased(xPxl2, yPxl2 + 1, color, (yEnd - Math.Floor(yEnd)) * xGap);
             }
 
             // Main loop
-            for (int x = xpxl1 + 1; x < xpxl2; x++)
+            for (int x = xPxl1 + 1; x < xPxl2; x++)
             {
                 if (steep)
                 {
-                    PlotAntialiased((int)Math.Floor(intery), x, color, 1.0f - (intery - Math.Floor(intery)));
-                    PlotAntialiased((int)Math.Floor(intery) + 1, x, color, intery - Math.Floor(intery));
+                    PlotAntialiased((int)Math.Floor(interY), x, color, 1.0f - (interY - Math.Floor(interY)));
+                    PlotAntialiased((int)Math.Floor(interY) + 1, x, color, interY - Math.Floor(interY));
                 }
                 else
                 {
-                    PlotAntialiased(x, (int)Math.Floor(intery), color, 1.0f - (intery - Math.Floor(intery)));
-                    PlotAntialiased(x, (int)Math.Floor(intery) + 1, color, intery - Math.Floor(intery));
+                    PlotAntialiased(x, (int)Math.Floor(interY), color, 1.0f - (interY - Math.Floor(interY)));
+                    PlotAntialiased(x, (int)Math.Floor(interY) + 1, color, interY - Math.Floor(interY));
                 }
 
-                intery += gradient;
+                interY += gradient;
             }
         }
 
@@ -413,58 +315,58 @@ namespace PixelEditor
             float gradient = dy / dx;
 
             // Handle first endpoint
-            int xend = x0;
-            float yend = y0 + gradient * (xend - x0);
-            float xgap = 1.0f - ((x0 + 0.5f) - (float)Math.Floor(x0 + 0.5f));
-            int xpxl1 = xend;
-            int ypxl1 = (int)Math.Floor(yend);
+            int xEnd = x0;
+            float yEnd = y0 + gradient * (xEnd - x0);
+            float xGap = 1.0f - ((x0 + 0.5f) - (float)Math.Floor(x0 + 0.5f));
+            int xPxl1 = xEnd;
+            int yPxl1 = (int)Math.Floor(yEnd);
 
             if (steep)
             {
-                PlotAntialiastedPreview(ypxl1, xpxl1, color, (1.0f - (yend - Math.Floor(yend))) * xgap);
-                PlotAntialiastedPreview(ypxl1 + 1, xpxl1, color, (yend - Math.Floor(yend)) * xgap);
+                PlotAntialiasedPreview(yPxl1, xPxl1, color, (1.0f - (yEnd - Math.Floor(yEnd))) * xGap);
+                PlotAntialiasedPreview(yPxl1 + 1, xPxl1, color, (yEnd - Math.Floor(yEnd)) * xGap);
             }
             else
             {
-                PlotAntialiastedPreview(xpxl1, ypxl1, color, (1.0f - (yend - Math.Floor(yend))) * xgap);
-                PlotAntialiastedPreview(xpxl1, ypxl1 + 1, color, (yend - Math.Floor(yend)) * xgap);
+                PlotAntialiasedPreview(xPxl1, yPxl1, color, (1.0f - (yEnd - Math.Floor(yEnd))) * xGap);
+                PlotAntialiasedPreview(xPxl1, yPxl1 + 1, color, (yEnd - Math.Floor(yEnd)) * xGap);
             }
 
-            float intery = yend + gradient;
+            float interY = yEnd + gradient;
 
             // Handle second endpoint
-            xend = x1;
-            yend = y1 + gradient * (xend - x1);
-            xgap = (x1 + 0.5f) - (float)Math.Floor(x1 + 0.5f);
-            int xpxl2 = xend;
-            int ypxl2 = (int)Math.Floor(yend);
+            xEnd = x1;
+            yEnd = y1 + gradient * (xEnd - x1);
+            xGap = (x1 + 0.5f) - (float)Math.Floor(x1 + 0.5f);
+            int xPxl2 = xEnd;
+            int yPxl2 = (int)Math.Floor(yEnd);
 
             if (steep)
             {
-                PlotAntialiastedPreview(ypxl2, xpxl2, color, (1.0f - (yend - Math.Floor(yend))) * xgap);
-                PlotAntialiastedPreview(ypxl2 + 1, xpxl2, color, (yend - Math.Floor(yend)) * xgap);
+                PlotAntialiasedPreview(yPxl2, xPxl2, color, (1.0f - (yEnd - Math.Floor(yEnd))) * xGap);
+                PlotAntialiasedPreview(yPxl2 + 1, xPxl2, color, (yEnd - Math.Floor(yEnd)) * xGap);
             }
             else
             {
-                PlotAntialiastedPreview(xpxl2, ypxl2, color, (1.0f - (yend - Math.Floor(yend))) * xgap);
-                PlotAntialiastedPreview(xpxl2, ypxl2 + 1, color, (yend - Math.Floor(yend)) * xgap);
+                PlotAntialiasedPreview(xPxl2, yPxl2, color, (1.0f - (yEnd - Math.Floor(yEnd))) * xGap);
+                PlotAntialiasedPreview(xPxl2, yPxl2 + 1, color, (yEnd - Math.Floor(yEnd)) * xGap);
             }
 
             // Main loop
-            for (int x = xpxl1 + 1; x < xpxl2; x++)
+            for (int x = xPxl1 + 1; x < xPxl2; x++)
             {
                 if (steep)
                 {
-                    PlotAntialiastedPreview((int)Math.Floor(intery), x, color, 1.0f - (intery - Math.Floor(intery)));
-                    PlotAntialiastedPreview((int)Math.Floor(intery) + 1, x, color, intery - Math.Floor(intery));
+                    PlotAntialiasedPreview((int)Math.Floor(interY), x, color, 1.0f - (interY - Math.Floor(interY)));
+                    PlotAntialiasedPreview((int)Math.Floor(interY) + 1, x, color, interY - Math.Floor(interY));
                 }
                 else
                 {
-                    PlotAntialiastedPreview(x, (int)Math.Floor(intery), color, 1.0f - (intery - Math.Floor(intery)));
-                    PlotAntialiastedPreview(x, (int)Math.Floor(intery) + 1, color, intery - Math.Floor(intery));
+                    PlotAntialiasedPreview(x, (int)Math.Floor(interY), color, 1.0f - (interY - Math.Floor(interY)));
+                    PlotAntialiasedPreview(x, (int)Math.Floor(interY) + 1, color, interY - Math.Floor(interY));
                 }
 
-                intery += gradient;
+                interY += gradient;
             }
         }
 
@@ -473,49 +375,28 @@ namespace PixelEditor
             if (x >= 0 && x < Width && y >= 0 && y < Height)
             {
                 Color existingColor = _pixels[x, y];
-                byte finalAlpha = (byte)(color.A * alpha);
+                byte finalAlpha = (byte)Math.Round(color.A * alpha);
 
-                if (existingColor.A == 0)
-                {
-                    // No existing color, just use the new color with alpha
-                    _pixels[x, y] = Color.FromArgb(finalAlpha, color.R, color.G, color.B);
-                }
+                if (existingColor.A == 0) _pixels[x, y] = color.WithAlphaTimes(alpha);
                 else
                 {
                     // Blend with existing color
-                    float blendAlpha = finalAlpha / 255.0f;
-                    byte r = (byte)(color.R * blendAlpha + existingColor.R * (1 - blendAlpha));
-                    byte g = (byte)(color.G * blendAlpha + existingColor.G * (1 - blendAlpha));
-                    byte b = (byte)(color.B * blendAlpha + existingColor.B * (1 - blendAlpha));
-                    byte a = (byte)Math.Max(existingColor.A, finalAlpha);
-
+                    var blendAlpha = finalAlpha / 255.0;
+                    var r = (byte)Math.Round(color.R * blendAlpha + existingColor.R * (1 - blendAlpha));
+                    var g = (byte)Math.Round(color.G * blendAlpha + existingColor.G * (1 - blendAlpha));
+                    var b = (byte)Math.Round(color.B * blendAlpha + existingColor.B * (1 - blendAlpha));
+                    var a = Math.Max(existingColor.A, finalAlpha);
                     _pixels[x, y] = Color.FromArgb(a, r, g, b);
                 }
             }
         }
 
-        private void PlotAntialiastedPreview(int x, int y, Color color, double alpha)
+        private void PlotAntialiasedPreview(int x, int y, Color color, double alpha)
         {
-            if (x >= 0 && x < Width && y >= 0 && y < Height)
-            {
-                byte finalAlpha = (byte)(Math.Min((byte)128, color.A) * alpha); // Keep preview semi-transparent
-                _previewLayer[x, y] = Color.FromArgb(finalAlpha, color.R, color.G, color.B);
-            }
+            if (!IsWithinBounds(x, y)) return;
+            _previewLayer[x, y] = color.WithAlphaTimes(alpha);
         }
-        
-        public bool IsColorSimilar(Color a, Color b, int tolerance)
-        {
-            int rDiff = Math.Abs(a.R - b.R);
-            int gDiff = Math.Abs(a.G - b.G);
-            int bDiff = Math.Abs(a.B - b.B);
-            int aDiff = Math.Abs(a.A - b.A);
-            
-            // Calculate color distance (simple Manhattan distance)
-            int distance = rDiff + gDiff + bDiff + aDiff;
-            
-            return distance <= tolerance;
-        }
-        
+         
         // Update the preview layer to show a brush tip at the specified position
         public void UpdatePreview(int x, int y, Color color, int brushSize = 1)
         {
@@ -533,37 +414,50 @@ namespace PixelEditor
                     // Simple circular brush check (for brushSize > 1)
                     if (brushSize > 1)
                     {
-                        double distance = Math.Sqrt(i * i + j * j);
-                        if (distance > brushSize / 2.0)
-                            continue;
+                        var distance = Math.Sqrt(i * i + j * j);
+                        if (distance > brushSize / 2.0) continue;
                     }
                     
-                    if (px >= 0 && px < Width && py >= 0 && py < Height)
-                    {
-                        // Use a semi-transparent version of the color for preview
-                        byte alpha = Math.Min((byte)128, color.A);
-                        _previewLayer[px, py] = Color.FromArgb(alpha, color.R, color.G, color.B);
-                    }
+                    if (!IsWithinBounds(px, py)) continue; 
+                    
+                    _previewLayer[px, py] = color;
                 }
             }
         }
         
         // Clear the preview layer (set all pixels to transparent)
-        public void ClearPreview()
+        public void ClearPreview() => Array.Clear(_previewLayer);
+
+        private void DrawEllipseInternal(Color[,] target, int x0, int y0, int x1, int y1, Color? borderColor, Color? fillColor, bool antialiased)
         {
-            if (_previewLayer == null)
-                return;
-                
-            for (int x = 0; x < Width; x++)
+            if (borderColor == null && fillColor == null) return;
+            if (!antialiased)
             {
-                for (int y = 0; y < Height; y++)
-                {
-                    _previewLayer[x, y] = Color.FromArgb(0, 255, 255, 255);
-                }
+                DrawEllipseBresenhamTo(target, x0, y0, x1, y1, borderColor, fillColor);
+                return;
             }
+            using var bitmap = GetBitmap(target);
+            bitmap.PaintOnCanvas(painter =>
+            {
+                var borderRect = new SKRect(x0+0.5f, y0+0.5f, x1+0.5f, y1+0.5f);
+                if (fillColor != null)
+                    painter.DrawOval(borderRect, new SKPaint()
+                    {
+                        IsAntialias = antialiased,
+                        Color = new SKColor(fillColor.Value.ToUInt32()), IsStroke = false,
+                    });
+                if (borderColor != null)
+                    painter.DrawOval(borderRect, new SKPaint()
+                    {
+                        StrokeWidth = 1,
+                        IsAntialias = antialiased,
+                        Color = new SKColor(borderColor.Value.ToUInt32()), IsStroke = true,
+                    });
+            });
+            WritePixels(target, bitmap);
         }
 
-        public WriteableBitmap GetBitmap()
+        private WriteableBitmap GetBitmap(Color[,] pixels)
         {
             var bitmap = new WriteableBitmap(
                 new PixelSize(Width, Height),
@@ -571,56 +465,84 @@ namespace PixelEditor
                 PixelFormat.Bgra8888,
                 AlphaFormat.Unpremul);
 
-            using (var fb = bitmap.Lock())
+            using var fb = bitmap.Lock();
+            unsafe
             {
-                unsafe
+                var ptr = (uint*)fb.Address;
+                for (int y = 0; y < Height; y++)
                 {
-                    var ptr = (uint*)fb.Address;
-                    for (int y = 0; y < Height; y++)
+                    for (int x = 0; x < Width; x++)
                     {
-                        for (int x = 0; x < Width; x++)
-                        {
-                            // Get the base pixel color
-                            Color pixelColor = _pixels[x, y];
-
-                            // Apply preview layer if available
-                            if (_previewLayer != null)
-                            {
-                                Color previewColor = _previewLayer[x, y];
-                                if (previewColor.A > 0)
-                                {
-                                    pixelColor = BlendColors(pixelColor, previewColor);
-                                }
-                            }
-        
-                            // Convert to BGRA format
-                            uint color = (uint)((pixelColor.A << 24) | (pixelColor.R << 16) | (pixelColor.G << 8) | pixelColor.B);
-                            ptr[y * fb.RowBytes / 4 + x] = color;
-                        }
+                        // Get the base pixel color
+                        Color pixelColor = pixels[x, y];
+       
+                        // Convert to BGRA format
+                        uint color = (uint)((pixelColor.A << 24) | (pixelColor.R << 16) | (pixelColor.G << 8) | pixelColor.B);
+                        ptr[y * fb.RowBytes / 4 + x] = color;
                     }
                 }
             }
-
             return bitmap;
         }
 
-        private Color BlendColors(Color background, Color overlay)
+        private void WritePixels(Color[,] target, WriteableBitmap source)
         {
-            // Simple alpha blending
-            float alpha = overlay.A / 255.0f;
-            byte r = (byte)(overlay.R * alpha + background.R * (1 - alpha));
-            byte g = (byte)(overlay.G * alpha + background.G * (1 - alpha));
-            byte b = (byte)(overlay.B * alpha + background.B * (1 - alpha));
-            return Color.FromRgb(r, g, b);
-        }
+            if (source.PixelSize.Width != Width || source.PixelSize.Height != Height)
+                throw new ArgumentException("Source bitmap size does not match editor size.");
 
+            using var fb = source.Lock();
+            unsafe
+            {
+                var ptr = (uint*)fb.Address;
+                for (int y = 0; y < Height; y++)
+                {
+                    for (int x = 0; x < Width; x++)
+                    {
+                        uint pixel = ptr[y * fb.RowBytes / 4 + x];
+                        byte b = (byte)(pixel & 0xFF);
+                        byte g = (byte)((pixel >> 8) & 0xFF);
+                        byte r = (byte)((pixel >> 16) & 0xFF);
+                        byte a = (byte)((pixel >> 24) & 0xFF);
+                        target[x, y] = Color.FromArgb(a, r, g, b);
+                    }
+                }
+            }
+        }
+        
+        public unsafe WriteableBitmap GetBitmap()
+        {
+            var bitmap = new WriteableBitmap(new PixelSize(Width, Height), new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Unpremul);
+            using var fb = bitmap.Lock();
+            var ptr = (uint*)fb.Address;
+            for (var y = 0; y < Height; y++)
+                for (var x = 0; x < Width; x++)
+                {
+                    // Get the base pixel color
+                    var pixelColor = _pixels[x, y];
+
+                    // Apply preview layer if available
+                    if (_previewLayer != null)
+                    {
+                        Color previewColor = _previewLayer[x, y];
+                        if (previewColor.A > 0)
+                        {
+                            pixelColor = previewColor.Over(pixelColor); //BlendColors(pixelColor, previewColor);
+                        }
+                    }
+                    // Convert to BGRA format
+                    var color = (uint)((pixelColor.A << 24) | (pixelColor.R << 16) | (pixelColor.G << 8) | pixelColor.B);
+                    ptr[y * fb.RowBytes / 4 + x] = color;
+                }
+            return bitmap;
+        }
+        
         public void SaveToStream(Stream stream)
         {
             var bitmap = GetBitmap();
             bitmap.Save(stream);
         }
 
-        public void LoadFromStream(Stream stream)
+        public unsafe void LoadFromStream(Stream stream)
         {
             
             var bitmap = new Bitmap(stream);
@@ -630,26 +552,20 @@ namespace PixelEditor
             bitmap.CopyPixels(wb.Lock(), AlphaFormat.Unpremul);
             
             _pixels = new Color[Width, Height];
-            using (var fb = wb.Lock())
+            using var fb = wb.Lock();
+            var ptr = (uint*)fb.Address;
+            for (int y = 0; y < Height; y++)
             {
-                unsafe
+                for (int x = 0; x < Width; x++)
                 {
-                    var ptr = (uint*)fb.Address;
-                    
-                    for (int y = 0; y < Height; y++)
-                    {
-                        for (int x = 0; x < Width; x++)
-                        {
-                            uint pixel = ptr[y * fb.RowBytes / 4 + x];
-                            
-                            byte b = (byte)(pixel & 0xFF);
-                            byte g = (byte)((pixel >> 8) & 0xFF);
-                            byte r = (byte)((pixel >> 16) & 0xFF);
-                            byte a = (byte)((pixel >> 24) & 0xFF);
-                            
-                            _pixels[x, y] = Color.FromArgb(a, r, g, b);
-                        }
-                    }
+                    uint pixel = ptr[y * fb.RowBytes / 4 + x];
+                        
+                    byte b = (byte)(pixel & 0xFF);
+                    byte g = (byte)((pixel >> 8) & 0xFF);
+                    byte r = (byte)((pixel >> 16) & 0xFF);
+                    byte a = (byte)((pixel >> 24) & 0xFF);
+                        
+                    _pixels[x, y] = Color.FromArgb(a, r, g, b);
                 }
             }
         }
@@ -669,7 +585,7 @@ namespace PixelEditor
                 {
                     for (int y = top; y <= bottom; y++)
                     {
-                        DrawPixel(x, y, fillColor);
+                        WritePixel(x, y, fillColor);
                     }
                 }
             }
@@ -680,15 +596,15 @@ namespace PixelEditor
                 // Top and bottom edges
                 for (int x = left; x <= right; x++)
                 {
-                    DrawPixel(x, top, borderColor);
-                    DrawPixel(x, bottom, borderColor);
+                    WritePixel(x, top, borderColor);
+                    WritePixel(x, bottom, borderColor);
                 }
                 
                 // Left and right edges
                 for (int y = top; y <= bottom; y++)
                 {
-                    DrawPixel(left, y, borderColor);
-                    DrawPixel(right, y, borderColor);
+                    WritePixel(left, y, borderColor);
+                    WritePixel(right, y, borderColor);
                 }
             }
         }
@@ -753,6 +669,116 @@ namespace PixelEditor
                     }
                 }
             }
+        }
+
+        // Draw an ellipse (optionally filled, optionally antialiased)
+        private void DrawEllipseTo(Color[,] target, int x1, int y1, int x2, int y2, Color borderColor, Color fillColor, bool drawBorder, bool drawFill, bool antialiased)
+        {
+            if (target == _previewLayer) ClearPreview();
+            // Normalize coordinates
+            var left = Math.Min(x1, x2);
+            var top = Math.Min(y1, y2);
+            var right = Math.Max(x1, x2);
+            var bottom = Math.Max(y1, y2);
+            var width = right - left;
+            var height = bottom - top;
+            if (width == 0 || height == 0) return;
+
+            DrawEllipseInternal(target, left, top, right, bottom, drawBorder ? borderColor : null,
+                drawFill ? fillColor : null, antialiased);
+             
+        }
+
+        public void DrawEllipse(int x1, int y1, int x2, int y2, Color borderColor, Color fillColor, bool drawBorder, bool drawFill, bool antialiased) 
+            => DrawEllipseTo(_pixels, x1, y1, x2, y2, borderColor, fillColor, drawBorder, drawFill, antialiased);
+
+        public void PreviewEllipse(int x1, int y1, int x2, int y2, Color borderColor, Color fillColor, bool drawBorder, bool drawFill, bool antialiased)
+            => DrawEllipseTo(_previewLayer, x1, y1, x2, y2, borderColor, fillColor, drawBorder, drawFill, antialiased);
+
+
+        static IEnumerable<(int x, int y)> PlotEllipseRect(int x0, int y0, int x1, int y1)
+        {
+            int Abs(int x) => x < 0 ? -x : x; /* absolute value */
+            int a = Abs(x1 - x0), b = Abs(y1 - y0), b1 = b & 1; /* values of diameter */
+            long dx = 4 * (1 - a) * b * b, dy = 4 * (b1 + 1) * a * a; /* error increment */
+            var err = dx + dy + b1 * a * a; /* error of 1.step */
+
+            if (x0 > x1)
+            {
+                x0 = x1;
+                x1 += a;
+            } /* if called with swapped points */
+
+            if (y0 > y1) y0 = y1; /* then exchange them */
+            y0 += (b + 1) / 2;
+            y1 = y0 - b1; /* starting pixel */
+            a *= 8 * a;
+            b1 = 8 * b * b;
+
+            do
+            {
+                yield return (x1, y0); /*   I. Quadrant */
+                yield return (x0, y0); /*  II. Quadrant */
+                yield return (x0, y1); /* III. Quadrant */
+                yield return (x1, y1); /*  IV. Quadrant */
+                var e2 = 2 * err;
+                if (e2 <= dy)
+                {
+                    y0++;
+                    y1--;
+                    err += dy += a;
+                } /* y step */
+
+                if (e2 >= dx || 2 * err > dy)
+                {
+                    x0++;
+                    x1--;
+                    err += dx += b1;
+                } /* x step */
+            } while (x0 <= x1);
+
+            while (y0 - y1 < b)
+            {
+                /* too early stop of flat ellipses a=1 */
+                yield return (x0 - 1, y0); /* -> finish tip of ellipse */
+                yield return (x1 + 1, y0++);
+                yield return (x0 - 1, y1);
+                yield return (x1 + 1, y1--);
+            }
+        }
+
+        // Midpoint ellipse algorithm for border (non-antialiased)
+        private void DrawEllipseBresenhamTo(Color[,] target, int x0, int y0, int x1, int y1, Color? borderColor, Color? fillColor)
+        {
+            if (borderColor is null && fillColor is null) return;
+            var pointsByY = new Dictionary<int, List<int>>();
+            foreach (var point in PlotEllipseRect(x0, y0, x1, y1))
+            {
+                int px = point.x;
+                int py = point.y;
+                if (!pointsByY.TryAdd(py, [px])) pointsByY[py].Add(px);
+                if (IsWithinBounds(px, py))
+                    PaintPixel(target, px, py, borderColor ?? fillColor ?? Colors.Transparent);
+            }
+
+            if (fillColor is null) return;
+            var fillYs = pointsByY.Keys.OrderBy(y => y).ToList();
+            foreach (var fillY in fillYs)
+            {
+                var fillXs = pointsByY[fillY].OrderBy(x => x).ToList();
+                for (int fillX = fillXs[0]; fillX <= fillXs[^1]; fillX++)
+                {
+                    if (!fillXs.Contains(fillX) && IsWithinBounds(fillX, fillY))
+                        PaintPixel(target, fillX, fillY, fillColor.Value);
+                }
+            }
+        }
+        
+        private static void PaintPixel(Color[,] target, int x, int y, Color color)
+        {
+            if (!target.AcceptsIndices(x, y)) return;
+            var existingColor = target[x, y];
+            target[x, y] = color.Over(existingColor);
         }
     }
 }
