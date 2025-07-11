@@ -115,8 +115,9 @@
                         <TextBlock VerticalAlignment="Center" Text="{Binding StatusText}" Margin="0 0 5 0"/>
                         <TextBlock VerticalAlignment="Center" Text="{Binding PositionText}" Margin="5 0"/>
                         <TextBlock VerticalAlignment="Center" Text="{Binding CanvasSizeText}" Margin="5 0"/>
-                        <TextBlock VerticalAlignment="Center" Margin="5 0">
+                        <TextBlock x:Name="ScaleInfoTextBlock" Tag="8" VerticalAlignment="Center" Margin="5 0">
                             Scaled Canvas: <Run Text="{Binding Bounds.Width, ElementName=EditorImage}" />x<Run Text="{Binding Bounds.Height, ElementName=EditorImage}" />
+                            (scale=<Run Text="{Binding Tag, ElementName=ScaleInfoTextBlock, Mode=OneWay}"/>)
                         </TextBlock>
                         <TextBlock VerticalAlignment="Center" IsVisible="{Binding SelectedTool, Converter={StaticResource ToolTypeConverter}, ConverterParameter=MagicWand}" Margin="5 0">
                             Magic Wand Tolerance: <Run Text="{Binding MagicWandTolerance}" /> (Use +/- to adjust)

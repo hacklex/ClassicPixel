@@ -346,13 +346,15 @@ namespace PixelEditor
             var x = (CanvasContainer.Bounds.Width - size.Width) / 2;
             var y = (CanvasContainer.Bounds.Height - size.Height) / 2;
             Canvas.SetLeft(EditorImage, x);
-            Canvas.SetTop(EditorImage, y); 
+            Canvas.SetTop(EditorImage, y);  
+            ScaleInfoTextBlock.Tag = $"{zoomFactor}";
         }
         
         private void ResetZoom_Click(object? sender, RoutedEventArgs e) => SetZoomFactorTo(1);
 
         private void CanvasContainer_PointerWheelChanged(object sender, PointerWheelEventArgs e)
         {
+            if (ViewModel == null) return;
             // Handle zooming with Control+MouseWheel
             if (e.KeyModifiers.HasFlag(KeyModifiers.Control))
             {
@@ -362,22 +364,48 @@ namespace PixelEditor
                 var mousePosition = e.GetPosition(EditorImage);
                 var positionInCanvas = e.GetPosition(CanvasContainer);
                 // Calculate the new scale (zoom in or out)
-                double zoomFactor = e.Delta.Y > 0 ? 1.2 : 1 / 1.2;
-                double newPositionX = mousePosition.X * zoomFactor;
-                double newPositionY = mousePosition.Y * zoomFactor;
-                
-                var newLeft = positionInCanvas.X - newPositionX;
-                var newTop = positionInCanvas.Y - newPositionY;
 
-                Canvas.SetLeft(EditorImage, newLeft);
-                Canvas.SetTop(EditorImage, newTop);
+                double newWidth, newHeight;
                 
-                var newWidth = EditorImage.Bounds.Width * zoomFactor;
-                var newHeight = EditorImage.Bounds.Height * zoomFactor;
+                if (((int)EditorImage.Bounds.Width) % ViewModel.PixelSize.Width == 0)
+                {
+                    double currentZoomFactor = EditorImage.Bounds.Width / ViewModel.PixelSize.Width;
+                    
+                    double newZoomFactor = currentZoomFactor + Math.Sign(e.Delta.Y);
+                    if (newZoomFactor < 1) newZoomFactor = 1;
+                    var scale = newZoomFactor / currentZoomFactor;
+                    var newPositionX = mousePosition.X * scale;
+                    var newPositionY = mousePosition.Y * scale;
+                    var newLeft = positionInCanvas.X - newPositionX;
+                    var newTop = positionInCanvas.Y - newPositionY;
+                    Canvas.SetLeft(EditorImage, newLeft);
+                    Canvas.SetTop(EditorImage, newTop);
+                    newWidth = ViewModel.PixelSize.Width * newZoomFactor;
+                    newHeight = ViewModel.PixelSize.Height * newZoomFactor;
+                    EditorImage.Width = newWidth;
+                    EditorImage.Height = newHeight;
+                }
+                else
+                {
+                    double zoomFactor = e.Delta.Y > 0 ? 1.2 : 1 / 1.2;
+                    double newPositionX = mousePosition.X * zoomFactor;
+                    double newPositionY = mousePosition.Y * zoomFactor;
+                    
+                    var newLeft = positionInCanvas.X - newPositionX;
+                    var newTop = positionInCanvas.Y - newPositionY;
 
-                EditorImage.Width = newWidth;
-                EditorImage.Height = newHeight;
-                
+                    Canvas.SetLeft(EditorImage, newLeft);
+                    Canvas.SetTop(EditorImage, newTop);
+                    
+                    newWidth = EditorImage.Bounds.Width * zoomFactor;
+                    newHeight = EditorImage.Bounds.Height * zoomFactor;
+
+                    EditorImage.Width = newWidth;
+                    EditorImage.Height = newHeight;
+                    
+                }
+                var currentScaleFactor = Math.Round(newWidth / ViewModel.PixelSize.Width);
+                ScaleInfoTextBlock.Tag = $"{currentScaleFactor:0.#}";
                 // Update selection outline
                 UpdateSelectionOverlay(newWidth, newHeight);
             }
